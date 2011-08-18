@@ -1,0 +1,12 @@
+; $id$;
+name = Microblog
+description = Implements Local Microblogging Server
+version = VERSION
+core = 6.x
+
+; Information added by drupal.org packaging script on 2010-06-14
+version = "6.x-1.2"
+core = "6.x"
+project = "microblog"
+datestamp = "1276473612"
+

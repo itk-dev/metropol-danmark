@@ -1,0 +1,28 @@
+<?php
+
+/**
+ * @file
+ * Provides install, upgrade and un-install functions for conditional_assets.
+ */
+
+/**
+ * Implementation of hook_install()
+ */
+function conditional_assets_install() {
+  // New module weights in core: put conditional_assets as the very last in the chain.
+  db_query("UPDATE {system} SET weight = 99 WHERE name = 'conditional_assets'");
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function conditional_assets_uninstall() {
+  // Delete conditional stylesheets variables.
+  $themes = list_themes();
+  foreach (array_keys($themes) as $theme) {
+    variable_del('conditional_assets_styles_'. $theme);
+    variable_del('conditional_assets_scripts_'. $theme);
+  }
+  // Clear the page cache.
+  cache_clear_all();
+}

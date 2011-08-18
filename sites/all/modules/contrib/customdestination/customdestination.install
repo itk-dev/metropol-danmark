@@ -1,0 +1,32 @@
+<?php
+function customdestination_schema() {
+  $schema['customdestination'] = array(
+    'description' => 'The base table for customdestinations.',
+    'fields' => array(
+      'fid' => array(
+        'description' => 'The form ID of this customdestination.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''),
+      'dst' => array(
+        'description' => 'The custom destination for this form ID.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''),
+      ),
+    'primary key' => array('fid'),
+  );
+  return $schema;
+}
+
+function customdestination_install() {
+  // Create my tables.
+  drupal_install_schema('customdestination');
+}
+
+function customdestination_uninstall() {
+  // Drop my tables.
+  drupal_uninstall_schema('customdestination');
+}

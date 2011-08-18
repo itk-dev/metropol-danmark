@@ -1,0 +1,56 @@
+# $Id: update_form_enhancement.pot,v 1.1.2.1 2008/10/26 03:30:56 markuspetrux Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  update_form_enhancement.module,v 1.1.2.1 2008/09/24 20:55:39 markuspetrux
+#  update_form_enhancement.info,v 1.1 2008/09/20 19:57:36 markuspetrux
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2008-10-26 04:14+0100\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: update_form_enhancement.module:16 update_form_enhancement.info:0
+msgid "Enhances update.php user interface by separating modules that are up to date from those that are not."
+msgstr ""
+
+#: update_form_enhancement.module:65
+msgid "All installed modules are up to date. You may still reapply any update task should you need to."
+msgstr ""
+
+#: update_form_enhancement.module:72
+msgid "All installed modules have pending update tasks."
+msgstr ""
+
+#: update_form_enhancement.module:78
+msgid "Modules with pending update tasks are grouped first. You may still reapply any update task to any module should you need to."
+msgstr ""
+
+#: update_form_enhancement.module:84
+msgid "All modules in this group have pending update tasks."
+msgstr ""
+
+#: update_form_enhancement.module:99
+msgid "All modules in this group are up to date."
+msgstr ""
+
+#: update_form_enhancement.module:0
+msgid "update_form_enhancement"
+msgstr ""
+
+#: update_form_enhancement.info:0
+msgid "Update form enhancement"
+msgstr ""
+
+#: update_form_enhancement.info:0
+msgid "Administration"
+msgstr ""

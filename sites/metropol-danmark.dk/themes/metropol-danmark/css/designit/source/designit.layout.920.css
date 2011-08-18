@@ -1,0 +1,175 @@
+/*
+_______________________________
+920PX LAYOUT */
+
+#container, #primary
+{
+	width:92em;
+}
+
+/* .l1: 2-column 66% - 33%
+---------------------------------------------------------- */
+body.l1 #primary
+{
+	width:60em;
+}
+
+body.l1 #secondary
+{
+	width:30em;
+	float:right;
+}
+
+
+/* .l2: 2-column 33% - 66%
+---------------------------------------------------------- */
+body.l2 #primary
+{
+	width:60em;
+	margin-left:32em;
+}
+
+body.l2 #secondary
+{
+	width:30em;
+	margin-left:-92em;
+}
+
+
+/* .l3: 2-column 50% - 50%
+---------------------------------------------------------- */
+body.l3 #primary
+{
+	width:45em;
+}
+
+body.l3 #secondary
+{
+	width:45em;
+	float:right;
+}
+
+
+/* .l4: 3-column 33% - 33% - 33%
+---------------------------------------------------------- */
+body.l4 #primary
+{
+	width:29.33em;
+	margin-left:31.33em;
+}
+
+body.l4 #secondary
+{
+	width:29.33em;
+	margin-left:-60.66em;
+}
+
+body.l4 #tertiary
+{
+	float:right;
+	width:29.33em;
+}
+
+
+/* .l5: 3-column 17% - 66% - 17%
+---------------------------------------------------------- */
+body.l5 #primary
+{
+	width:58em;
+	margin-left:17em;
+}
+
+body.l5 #secondary
+{
+	width:15em;
+	margin-left:-75em;
+}
+
+body.l5 #tertiary
+{
+	float:right;
+	width:15em;
+}
+
+
+/* .l6: 3-column 25% - 50% - 25%
+---------------------------------------------------------- */
+body.l6 #primary
+{
+	width:44em;
+	margin-left:24em;
+}
+
+body.l6 #secondary
+{
+	width:22em;
+	margin-left:-68em;
+}
+
+body.l6 #tertiary
+{
+	float:right;
+	width:22em;
+}
+
+
+/* .l7: 3-column 66% - 17% - 17%
+---------------------------------------------------------- */
+body.l7 #primary
+{
+	width:58em;
+	margin-right:2em;
+}
+
+body.l7 #secondary
+{
+	width:15em;
+}
+
+body.l7 #tertiary
+{
+	float:right;
+	width:15em;
+}
+
+
+/* .l8: 3-column 50% - 25% - 25%
+---------------------------------------------------------- */
+body.l8 #primary
+{
+	width:44em;
+	margin-right:2em;
+}
+
+body.l8 #secondary
+{
+	width:22em;
+	margin-left:0;
+}
+
+body.l8 #tertiary
+{
+	float:right;
+	width:22em;
+}
+
+
+/* .l9: 3-column 25% - 25% - 50%
+---------------------------------------------------------- */
+body.l9 #primary
+{
+	width:44em;
+	float:right;
+}
+
+body.l9 #secondary
+{
+	width:22em;
+}
+
+body.l9 #tertiary
+{
+	float:right;
+	width:22em;
+	margin-right:2em;
+}

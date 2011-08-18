@@ -1,0 +1,11 @@
+; $Id: jammer_generic.info,v 1.1.2.1 2010/11/19 22:02:32 bastlynn Exp $
+name = Generic Jammer
+description = "Remove configured form elements from forms."
+package = Jammer
+core = 6.x
+; Information added by drupal.org packaging script on 2010-11-20
+version = "6.x-1.5"
+core = "6.x"
+project = "jammer"
+datestamp = "1290222160"
+

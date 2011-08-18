@@ -1,0 +1,74 @@
+<?php
+// $Id: node_level_blocks.install,v 1.1 2010/05/19 19:54:26 skilip Exp $
+
+/**
+ * @file
+ * Installation file and schema definition for
+ * node_level_blocks.module
+ *
+ * @author skilip
+ */
+
+/**
+ * Implement hook_schema().
+ * @link http://api.drupal.org/api/function/hook_schema/6
+ * @link http://drupal.org/node/146843
+ */
+function node_level_blocks_schema() {
+  $schema['node_level_blocks'] = array(
+    'description' => 'The base table for node_level_blocks.module.',
+    'fields' => array(
+      'nid' => array(
+        'description' => 'The primary identifier for a node.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'bid' => array(
+        'description' => 'The primary identifier for a block.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ),
+      'region' => array(
+        'description' => 'The region in which to place the block.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'weight' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => FALSE,
+      ),
+    ),
+    'indexes' => array(
+      'nid' => array('nid'),
+      'bid' => array('bid'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implement hook_install().
+ * @link http://api.drupal.org/api/function/hook_install/6
+ */
+function node_level_blocks_install() {
+  // Install the schema for node_level_blocks.
+  drupal_install_schema('node_level_blocks');
+}
+
+/**
+ * Implement hook_uninstall().
+ * @link http://api.drupal.org/api/function/hook_uninstall/6
+ */
+function node_level_blocks_uninstall() {
+  // Uninstall the schema for node_level_blocks.
+  drupal_uninstall_schema('node_level_blocks');
+
+  // Delete any variables set by this module.
+  db_query("DELETE FROM {variable} WHERE name LIKE 'node_level_blocks_%'");
+}

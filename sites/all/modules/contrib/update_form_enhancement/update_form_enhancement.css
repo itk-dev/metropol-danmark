@@ -1,0 +1,9 @@
+/* $Id: update_form_enhancement.css,v 1.1.2.1 2009/02/20 16:48:35 markuspetrux Exp $ */
+
+.update-form-enhancement-item {
+  display: none;
+}
+
+.update-form-enhancement-module pre {
+  font-size: 1.1em;
+}

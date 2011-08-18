@@ -1,0 +1,194 @@
+<?php
+// $Id: views_content_cache.test,v 1.1.2.2 2010/08/01 18:41:43 darthsteven Exp $
+
+class ViewsContentCacheTest extends DrupalWebTestCase {
+
+  function getInfo() {
+    return array(
+      'name' => t('Views content cache functional tests'),
+      'description' => t('Functional tests for the Views content cache module.'),
+      'group' => t('Views content cache'),
+    );
+  }
+
+  /**
+   * Test that when a node is added the appropriate cache segment is updated.
+   */
+  function testStoryContentAdded() {
+    $cid = array('node' => array('story'));
+    //$this->verbose(views_content_cache_update_get($cid));
+    $this->assertFalse(views_content_cache_update_get($cid, TRUE), t('Ensure that the no timestamp has been set against the story cache segment.'));
+
+    $timestamp_before = time();
+    $this->node = $this->drupalCreateNode(array('type' => 'story'));
+    $timestamp_after = time();
+
+    // Now need to make sure that views content cache recorded the correct time:
+    $cid = array('node' => array('story'));
+    $updated = views_content_cache_update_get($cid, TRUE);
+    $result = ($updated <= $timestamp_after) && ($updated >= $timestamp_before);
+    $this->assertTrue($result, t('Ensure that the timestamp against the story cache segment is updated.'));
+
+    // Make sure the page segment was untouched:
+    $this->assertFalse(views_content_cache_update_get(array('node' => array('page')), TRUE), t('Ensure that the no timestamp has been set against the page cache segment.'));
+  }
+
+  public function setUp() {
+    parent::setUp('views_content_cache', 'ctools', 'views', 'comment');  // Enable any modules required for the test
+    // Create and log in our privileged user.
+    $this->privileged_user = $this->drupalCreateUser(array(
+      'create story content',
+      'edit own story content',
+      ));
+    $this->drupalLogin($this->privileged_user);
+  }
+
+
+}
+
+
+class ViewsContentCacheUnitTest extends DrupalUnitTestCase {
+
+  function getInfo() {
+    return array(
+      'name' => t('Views content cache unit tests'),
+      'description' => t('Unit tests for the Views content cache module.'),
+      'group' => t('Views content cache'),
+    );
+  }
+
+  public function setUp() {
+    parent::setUp('views_content_cache', 'ctools', 'views', 'comment');  // Enable any modules required for the test
+  }
+
+  function testQueryBuilder() {
+    $query_arrays = array(
+      // First test
+      array(
+        '#glue' => 'AND',
+        array(
+          '#clause' => 'FIELDA = %d',
+          '#args' => array(1),
+        ),
+        array(
+          '#clause' => 'FIELDB = %d',
+          '#args' => array(2),
+        ),
+        array(
+          '#clause' => 'FIELDC = %d',
+          '#args' => array(3),
+        ),
+      ),
+
+      //Second test:
+      array(
+        '#glue' => 'OR',
+        array(
+          '#clause' => 'FIELDA = %d',
+          '#args' => array(3),
+        ),
+        array(
+          '#clause' => 'FIELDB = %d',
+          '#args' => array(2),
+        ),
+        array(
+          '#clause' => 'FIELDC = %d',
+          '#args' => array(1),
+        ),
+      ),
+
+      // Third test:
+      array(
+        '#glue' => 'OR',
+        array(
+        '#glue' => 'AND',
+          array(
+            '#clause' => 'FIELDA = %d',
+            '#args' => array(1, 2),
+          ),
+          array(
+            '#clause' => 'FIELDB = %d',
+            '#args' => array(3, 4),
+          ),
+        ),
+        array(
+          '#clause' => 'FIELDC = %d',
+          '#args' => array(5, 6),
+        ),
+      ),
+
+      // Fourth test:
+      array(
+        '#glue' => 'OR',
+        array(
+          '#clause' => 'FIELDA = %d',
+          '#args' => array(5, 6),
+        ),
+        array(
+        '#glue' => 'AND',
+          array(
+            '#clause' => 'FIELDB = %d',
+            '#args' => array(1, 2),
+          ),
+          array(
+            '#clause' => 'FIELDC = %d',
+            '#args' => array(3, 4),
+          ),
+        ),
+      ),
+
+      // Fifth test:
+      array(
+        '#glue' => 'OR',
+        array(
+          '#clause' => 'FIELDA = %d',
+          '#args' => array(5, 6),
+        ),
+        array(
+        '#glue' => 'AND',
+          array(
+            '#clause' => 'FIELDB = %d',
+            '#args' => array(1, 2),
+          ),
+          array(
+            '#glue' => 'OR',
+            array(
+              '#clause' => 'FIELDC = %d',
+              '#args' => array(3, 4),
+            ),
+            array(
+              '#clause' => 'FIELDD = %d',
+              '#args' => array(7, 8),
+            ),
+          ),
+          array(
+            '#clause' => 'FIELDE = %d',
+            '#args' => array(9, 10),
+          ),
+        ),
+      ),
+
+    );
+    $expected_where = array(
+      '(FIELDA = %d AND FIELDB = %d AND FIELDC = %d)',
+      '(FIELDA = %d OR FIELDB = %d OR FIELDC = %d)',
+      '((FIELDA = %d AND FIELDB = %d) OR FIELDC = %d)',
+      '(FIELDA = %d OR (FIELDB = %d AND FIELDC = %d))',
+      '(FIELDA = %d OR (FIELDB = %d AND (FIELDC = %d OR FIELDD = %d) AND FIELDE = %d))',
+
+    );
+    $expected_args = array(
+      array(1, 2, 3),
+      array(3, 2, 1),
+      array(1, 2, 3, 4, 5, 6),
+      array(5, 6, 1, 2, 3, 4),
+      array(5, 6, 1, 2, 3, 4, 7, 8, 9, 10),
+    );
+    foreach ($query_arrays as $key => $query) {
+      $built = views_content_cache_query_builder($query);
+      $this->assertEqual($built['#clause'], $expected_where[$key], t('Built the query: "@query", expected: "@expected".', array('@query' => $built['#clause'], '@expected' => $expected_where[$key])));
+      $this->assertIdentical($built['#args'], $expected_args[$key], t('Built the query arguments.'));
+    }
+  }
+
+}

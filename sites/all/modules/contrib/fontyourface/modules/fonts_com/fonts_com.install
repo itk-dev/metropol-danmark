@@ -1,0 +1,27 @@
+<?php
+// $Id: fonts_com.install,v 1.1.4.2 2011/02/17 03:53:23 sreynen Exp $
+
+/**
+ * @file
+ * Removes fonts on disable.
+ */
+
+/**
+ * Implements hook_enable().
+ */
+function fonts_com_enable() {
+
+  // Weight must be above @font-your-face weight so preprocess comes after
+
+  db_query("UPDATE {system} SET weight = 1 WHERE name = 'fonts_com'");
+
+} // fonts_com_enable
+
+/**
+ * Implements hook_disable().
+ */
+function fonts_com_disable() {
+
+  fontyourface_provider_disable('fonts_com');
+
+} // fonts_com_disable

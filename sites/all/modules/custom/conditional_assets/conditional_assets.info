@@ -1,0 +1,3 @@
+name = Conditional Assets
+description = Allows themes to add conditional javascript and stylesheets
+core = 6.x

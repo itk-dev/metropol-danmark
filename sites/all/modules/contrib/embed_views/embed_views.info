@@ -1,0 +1,12 @@
+name = Embed Views Display
+description = Defines embed view display.
+package = Views
+dependencies[] = views
+core = 6.x
+
+; Information added by drupal.org packaging script on 2011-04-11
+version = "6.x-1.2"
+core = "6.x"
+project = "embed_views"
+datestamp = "1302533215"
+

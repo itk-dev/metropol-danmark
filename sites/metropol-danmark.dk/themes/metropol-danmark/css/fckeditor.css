@@ -1,0 +1,63 @@
+/*
+@import url(designit/designit.base.min.css);
+@import url(agrotech.screen.css);
+*/
+
+body,
+table
+{
+  color:#4D4D4D;  
+  font-size:12px;
+  font-family:Arial, Helvetica, sans-serif;
+}
+
+h3
+{
+  font-size:20px;
+  margin-bottom:0;
+}
+
+a,
+a:link,
+a:visited
+{
+  color:#FF7800;
+  text-decoration:none;
+}
+
+a:hover,
+a:active,
+a:focus
+{
+  color:#F90;
+  text-decoration:underline;
+}
+
+ul,
+ol
+{
+  margin-left:0;
+  padding:0;
+  list-style-position:inside;
+}
+
+ul
+{
+  list-style-type:none;
+}
+
+ul li,
+ol li
+{
+  padding-left:1em;
+  margin-left:.2em;
+  margin-bottom:.5em;
+}
+
+
+table
+{
+  width:100%;
+}
+
+

@@ -1,0 +1,49 @@
+/*
+_______________________________
+BASE.IE */
+
+textarea
+{
+	white-space: pre;
+}
+
+.inner legend
+{
+	margin-bottom:1.6em;
+}
+
+.inner fieldset
+{
+	padding-top:0;
+}
+
+sup,sub
+{
+	font-size:100%;
+}
+
+.inner legend:first-child
+{
+	margin-top:0;
+}
+
+a abbr,a acronym
+{
+	text-decoration:underline;
+}
+
+* html .inner blockquote *
+{
+	margin:.8em 0;
+}
+
+* html input
+{
+	cursor:expression(this.type=='text' || this.type=='password' ? 'text' : 'pointer');
+	display:expression(this.type=='hidden' ? 'none' : 'inline');
+}
+
+* html .inner textarea,* html .inner input,.inner input[type='submit'],.inner input[type='button']
+{
+	padding:0;
+}

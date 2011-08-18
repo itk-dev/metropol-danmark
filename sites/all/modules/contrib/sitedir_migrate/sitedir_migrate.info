@@ -1,0 +1,12 @@
+; $Id: sitedir_migrate.info,v 1.1 2009/12/28 21:51:06 andrewmriley Exp $ 
+name = "Site Directory Migrate"
+description = "A module that helps you move a sites site directory"
+package = "Migrate"
+core = "6.x"
+project = "sitedir_migrate"
+; Information added by drupal.org packaging script on 2009-12-29
+version = "6.x-1.0-beta2"
+core = "6.x"
+project = "sitedir_migrate"
+datestamp = "1262112055"
+

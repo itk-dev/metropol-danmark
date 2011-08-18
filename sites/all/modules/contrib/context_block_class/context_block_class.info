@@ -1,0 +1,13 @@
+name = Context Block Class 
+description = Define variable block classes per context.
+package = Context 
+core = 6.x
+
+dependencies[] = context
+
+; Information added by drupal.org packaging script on 2010-10-01
+version = "6.x-1.0-alpha2"
+core = "6.x"
+project = "context_block_class"
+datestamp = "1285953962"
+

@@ -1,0 +1,59 @@
+<?php
+// $Id: context_block_class.module,v 1.1 2010/09/09 21:26:05 jerdavis Exp $
+
+/**
+ * Implementation of hook_context_plugins().
+ */
+function context_block_class_context_plugins() {
+  $plugins = array();
+  $plugins['context_block_class_reaction_block_class'] = array(
+    'handler' => array(
+      'path'   => drupal_get_path('module', 'context_block_class') .'/plugins',
+      'file'   => 'context_block_class_reaction_block_class.inc',
+      'class'  => 'context_block_class_reaction_block_class',
+      'parent' => 'context_reaction',
+    ),
+  );
+  return $plugins;
+}
+
+/**
+ * Implementation of hook_context_registry().
+ */
+function context_block_class_context_registry() {
+  return array(
+    'reactions' => array(
+      'block_class' => array(
+        'title' => t('Block classes'),
+        'descriptoin' => t('Configurable block classes per region within this context'),
+        'plugin' => 'context_block_class_reaction_block_class',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_theme_registry_alter().
+ */
+function context_block_class_theme_registry_alter(&$theme_registry) {
+  // Push theme_block() through a context_block_class_preprocess
+  // to provide extra block classes per context. Ensure that
+  // context_block_class_preprocess_block() comes immediately after
+  // template_preprocess_block().
+  $position = array_search('context_block_class_preprocess_block', $theme_registry['block']['preprocess functions']);
+  if ($position !== FALSE) {
+    unset($theme_registry['block']['preprocess functions'][$position]);
+  }
+  $position = array_search('template_preprocess_block', $theme_registry['block']['preprocess functions']);
+  $position = $position ? $position + 1 : 2;
+  array_splice($theme_registry['block']['preprocess functions'], $position, 0, 'context_block_class_preprocess_block');
+}
+
+/**
+ * Implementation of preprocess_block().
+ */
+function context_block_class_preprocess_block(&$vars) {
+  if ($plugin = context_get_plugin('reaction', 'block_class')) {
+    $plugin->execute($vars);
+  }
+}

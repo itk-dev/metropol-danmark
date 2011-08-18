@@ -1,0 +1,12 @@
+name = Input Format Permissions
+description = Provide a way for grant/revoke permissions on input formats via the Drupal standard permissions screen.
+package = Input filters
+version = 6.x-1.0
+core = 6.x
+
+; Information added by drupal.org packaging script on 2009-01-05
+version = "6.x-1.0"
+core = "6.x"
+project = "input_format_permissions"
+datestamp = "1231195529"
+

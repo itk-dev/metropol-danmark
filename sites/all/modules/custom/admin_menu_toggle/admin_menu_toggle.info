@@ -1,0 +1,6 @@
+; $Id$
+name = Admin Menu Toggle
+description = Shows/hides admin menu with the press of a key.
+package = Administration
+core = 6.x
+dependencies[] = admin_menu

@@ -1,0 +1,13 @@
+<?php
+
+function sitedir_migrate_cck_filefield_sitedir_query() {
+  return 'CCK File Fields';
+}
+
+function sitedir_migrate_cck_filefield_sitedir_update() {
+  watchdog('Sitedir Migrate', 'Running the CCK Filefield migration');
+  $args = func_get_args();
+  $from = $args[0];
+  $to = $args[1];
+  db_query("UPDATE {files} SET filepath = replace(filepath,'%s','%s')", $from, $to);
+}

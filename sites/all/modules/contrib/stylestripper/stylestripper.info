@@ -1,0 +1,13 @@
+; $Id$ 
+name = Style stripper
+description = Allow configuration of what module CSS files that should be loaded in your themes
+version = VERSION
+core = 6.x
+
+
+; Information added by drupal.org packaging script on 2009-12-27
+version = "6.x-1.0"
+core = "6.x"
+project = "stylestripper"
+datestamp = "1261919760"
+

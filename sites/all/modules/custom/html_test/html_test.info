@@ -1,0 +1,5 @@
+; $Id$
+name = HTML test page
+description = Misc helper functions.
+version = 6.x-1.0
+core = 6.x

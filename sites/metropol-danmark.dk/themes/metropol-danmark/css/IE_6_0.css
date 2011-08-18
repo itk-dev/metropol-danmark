@@ -1,0 +1,58 @@
+div
+{
+	text-align:left;
+}
+
+div.right{
+	float: left;
+	position:relative;
+	width:285px;
+	margin:0 0 0 20px;
+	font-size:11px;
+	
+}
+
+#splashlefty{
+margin: 15px 20px 15px 10px;
+
+
+}
+#splashrighty{
+margin:15px 0 15px 0;
+}
+#splash_inner {
+margin: 10px 0 5px 5px;
+float:left;
+}
+
+#align_hotfix{
+margin-left:10px;
+}
+.rightbar_img_ie_fix {
+display: block; 
+}
+#splash p{
+width:280px;
+margin: 4px 0;}
+
+.section-presseklip .presseklippe-video .views-row,
+.section-presseklip .presseklippe-tekst .views-row,
+.section-nyheder #block-nyheder .views-row
+{
+	position:relative;
+	height:auto;
+	width:100%;
+}
+
+.rapport-pdf
+{
+	height:auto;
+	width:200px;
+}
+
+
+div.meta{
+	height:23px;
+}
+
+

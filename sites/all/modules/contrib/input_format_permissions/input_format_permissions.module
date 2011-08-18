@@ -1,0 +1,82 @@
+<?php
+
+/**
+ * Implementation of hook_init
+ */
+function input_format_permissions_init() {
+  // If this is the page where permissions are set, add some javascript
+  if (drupal_match_path($_GET['q'], 'admin/user/permissions')) {
+    $formats = input_format_permissions_filter_load();
+    // This array will define a Drupal.settings variable we will need in JS
+    $default_format = array(
+      'input_format_permissions_default_filter' => 
+        $formats[variable_get('filter_default_format', 0)],
+    );
+
+    $path = drupal_get_path('module', 'input_format_permissions');
+    // Add some javascript
+    drupal_add_js($default_format, 'setting');
+    drupal_add_js($path . '/input_format_permissions.js');
+  }
+}
+
+/**
+ * Return all filters in the system
+ * 
+ * @return array
+ */
+function input_format_permissions_filter_load() {
+  $filters = array();
+  $result = db_query('SELECT format, name FROM {filter_formats}');
+  while ($filter = db_fetch_array($result)) {
+    $filters[$filter['format']] = 
+      input_format_permissions_formatname_to_permission($filter['name']);
+  }
+  return $filters; 
+}
+
+/**
+ * Implementation of hook_perm
+ */
+function input_format_permissions_perm() { return input_format_permissions_filter_load(); }
+
+/**
+ * Implementation of hook_form_alter
+ */
+function input_format_permissions_form_alter(&$form, $form_state, $form_id) {
+  // Add our own special submit function to the permissions form
+  if ($form_id == 'user_admin_perm') { 
+    $form['#submit'][] = 'input_format_permissions_perm_submit';
+  // Remove the ability to change roles from the configure filter form
+  } else if ($form_id == 'filter_admin_format_form') {
+    $form['roles']['#access'] = FALSE;
+  }
+}
+
+/**
+ * Based on the submitted permissions form, setup filter permissions
+ * @param array $form_state The submitted form_state
+ * @return void
+ */
+function input_format_permissions_perm_submit($form, &$form_state) {
+  $filters = input_format_permissions_filter_load();
+  $sql = 'UPDATE {filter_formats} SET roles = "%s" WHERE format = "%d"';
+  // Determine which roles are associated with each filter
+  foreach ($filters as $fid => $filter) {
+    $roles = array();
+    foreach ($form_state['values'] as $id => $submitted_permissions) {
+      if (!is_numeric($id)) { continue; }
+      if (isset($submitted_permissions[$filter])) { $roles[] = $id; }
+    }
+    // Update the roles for an input format
+    db_query($sql, ',' . implode(',', $roles) . ',', $fid);
+    cache_clear_all($fid . ':', 'cache_filter', TRUE);
+  }
+}
+
+/**
+ * Create a permission name based on the filter name
+ */
+function input_format_permissions_formatname_to_permission($name) {
+  return 'use the ' . check_plain(strtolower($name)) . ' input format'; 
+}

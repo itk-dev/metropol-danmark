@@ -1,0 +1,1133 @@
+<?php
+// $Id: imagefield_import.module,v 1.8.2.34 2010/05/18 07:53:51 wulff Exp $
+
+/**
+ * @file
+ * Imports images from a directory on the server into nodes with CCK imagefields.
+ */
+
+// TODO: get rid of the ugly ':::' type/field variable
+
+define('IMAGEFIELD_IMPORT_PREPOP_OFF', 0);
+define('IMAGEFIELD_IMPORT_PREPOP_FILENAME', 1);
+define('IMAGEFIELD_IMPORT_PREPOP_EXIF', 2);
+define('IMAGEFIELD_IMPORT_PREPOP_IPTC', 3);
+
+define('IMAGEFIELD_IMPORT_MULTIPLE_NODES', 0);
+define('IMAGEFIELD_IMPORT_SINGLE_NODE', 1);
+
+/* --- HOOKS ---------------------------------------------------------------- */
+
+/**
+ * Implementation of hook_help().
+ */
+function imagefield_import_help($path, $arg) {
+  switch ($path) {
+    case 'admin/content/imagefield_import':
+      $available = _imagefield_import_available_node_types();
+      list($type, $field) = split(':::', variable_get('imagefield_import_field', $available['keys'][0]));
+      if ($type) {
+        $help = '<p>'. t('Images will be imported to the %field field on the %type content type.', array('%field' => $field, '%type' => $type)) .' ';
+        $mode = variable_get('imagefield_import_mode', IMAGEFIELD_IMPORT_MULTIPLE_NODES);
+        if ($mode == IMAGEFIELD_IMPORT_MULTIPLE_NODES) {
+          $help .= t('A node will be created for each imported image.');
+        }
+        else {
+          $help .= t('All imported images will be added to a single node.');
+        }
+        $help .= '</p><p>';
+        if (module_exists('taxonomy')) {
+          $help .= t('If any taxonomies are associated with the %type content type, you can use the form below to set taxonomy terms on all uploaded images.', array('%type' => $type));
+        }
+        $help .= ' '. t('All non-filefield form widgets are rendered at the bottom of the form. Use them to set values on all imported nodes.');
+        $help .= '</p>';
+        return $help;
+      }
+      break;
+    case 'admin/settings/imagefield_import':
+      // this check is placed here to avoid duplicate messages (which would be
+      // the case if it was placed in imagefield_import_form()
+      $available = _imagefield_import_available_node_types();
+      if (count($available['matches']) == 0) {
+        drupal_set_message(t('In order to import images into an imagefield, you must first have a node type that has an imagefield associated with it. Configure this on the !url page', array('!url' => l(t('Content types'), 'admin/content/types'))), 'error');
+      }
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function imagefield_import_menu() {
+  $items = array();
+
+  $items['admin/content/imagefield_import'] = array(
+    'title' => 'Import images',
+    'description' => 'Import images into CCK imagefields from an import folder in filesystem.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('imagefield_import_form'),
+    'access arguments' => array('import to imagefield'),
+  );
+  $items['admin/content/imagefield_import/confirm'] = array(
+    'title' => 'Import images',
+    'description' => 'Confirm image import.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('imagefield_import_confirm'),
+    'access arguments' => array('import to imagefield'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/settings/imagefield_import'] = array(
+    'title' => 'Imagefield import',
+    'description' => 'Import images into CCK imagefields from an import folder in filesystem.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('imagefield_import_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function imagefield_import_perm() {
+  return array('import to imagefield');
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function imagefield_import_theme() {
+  return array(
+    'imagefield_import_filename' => array(
+      'arguments' => array(
+        'filename' => NULL,
+        'size' => NULL,
+        'dimensions' => NULL,
+        'status' => NULL,
+      ),
+    ),
+    'imagefield_import_form' => array(
+      'arguments' => array(
+        'form' => NULL,
+      ),
+    ),
+    'imagefield_import_thumbnail' => array(
+      'arguments' => array(
+        'filename' => NULL,
+        'width' => NULL,
+      ),
+    ),
+  );
+}
+
+/* --- FORMS ---------------------------------------------------------------- */
+
+/**
+ * Menu callback; admin settings form.
+ */
+function imagefield_import_admin_settings() {
+  $form['imagefield_import_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Import path'),
+    '#default_value' => variable_get('imagefield_import_path', file_directory_path() .'/images/import'),
+    '#after_build' => array('_imagefield_import_check_directory'),
+    '#description' => t("A file system path where files are stored before being imported. This directory must exist and be writable by Drupal. Paths with a leading slash (e.g. '/upload') are relative to the server's root directory while paths without a leading slash (e.g. 'upload') are relative to the Drupal root directory."),
+  );
+
+  $available = _imagefield_import_available_node_types();
+  if (!empty($available['matches'])) {
+    $form['imagefield_import_field'] = array(
+      '#type' => 'select',
+      '#title' => t('Target field'),
+      '#description' => t('Select the imagefield you want to import photos into. When you do the import, nodes of your selected type will be created and the selected field will be populated with the imported image.'),
+      '#options' => $available['matches'],
+      '#default_value' => variable_get('imagefield_import_field', $available['keys'][0]),
+    );
+  }
+
+  $form['imagefield_import_mode'] = array(
+    '#type' => 'radios',
+    '#title' => t('Mode'),
+    '#options' => array(
+      IMAGEFIELD_IMPORT_MULTIPLE_NODES => t('Import images to separate nodes'),
+      IMAGEFIELD_IMPORT_SINGLE_NODE => t('Import images to a single node'),
+    ),
+    '#default_value' => variable_get('imagefield_import_mode', IMAGEFIELD_IMPORT_MULTIPLE_NODES),
+    '#description' => t('Choose import images to separate nodes if you want to create a node for each image you import. Choose import images to a single node to add all imported images to a single node which will be created during the import.'),
+  );
+
+  $form['thumbnails'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Thumbnails'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['thumbnails']['imagefield_import_show_thumbnails'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show thumbnails'),
+    '#description' => t('Show thumbnails on the import form. WARNING: This displays the original images scaled by the browser and will only work if the upload folder is placed below the Drupal root folder.'),
+    '#default_value' => variable_get('imagefield_import_show_thumbnails', FALSE),
+  );
+  $form['thumbnails']['imagefield_import_thumbnail_width'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Thumbnail width'),
+    '#description' => t('Enter the width of the thumbnails in pixels.'),
+    '#default_value' => variable_get('imagefield_import_thumbnail_width', 100),
+    '#size' => 4,
+  );
+
+  $form['files'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('File handling'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['files']['imagefield_import_ignore'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Ignore files'),
+    '#description' => t('Ignore any files matching this regular expression. You must include the leading and trailing slash of the regular expression. Leave the field empty if you do not want to ignore any files.'),
+    '#default_value' => variable_get('imagefield_import_ignore', ''),
+    '#size' => 16,
+  );
+  $form['files']['imagefield_import_delete'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Delete files after import'),
+    '#description' => t('Delete the images from the upload folder when they have been succesfully imported.'),
+    '#default_value' => variable_get('imagefield_import_delete', TRUE),
+  );
+
+  $form['publishing'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Publishing options'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['publishing']['imagefield_import_status'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Set node status during import'),
+    '#description' => t('Mark each imported node as published/unpublished when they are imported. All imported nodes are published by default.'),
+    '#default_value' => variable_get('imagefield_import_status', FALSE),
+  );
+  $form['publishing']['imagefield_import_unpublish'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Set default status to unpublished'),
+    '#description' => t('By default each imported node is marked as published. All files matching this regular expression will have the status dropdown set to unpublished on the import form. You must include the leading and trailing slash of the regular expression. Leave the field empty if you do not want to use this feature.'),
+    '#default_value' => variable_get('imagefield_import_unpublish', ''),
+    '#size' => 16,
+  );
+
+  $prepop_options = _imagefield_import_prepopulate_options();
+
+  $form['advanced'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Advanced settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['advanced']['imagefield_import_prepopulate_title'] = array(
+    '#type' => 'radios',
+    '#title' => t('Title and body fields'),
+    '#description' => t('Prepopulate the title field with the name of the image file.'),
+    '#options' => $prepop_options,
+    '#default_value' => variable_get('imagefield_import_prepopulate_title', IMAGEFIELD_IMPORT_PREPOP_OFF),
+  );
+  if (isset($prepop_options[IMAGEFIELD_IMPORT_PREPOP_EXIF])) {
+    $form['advanced']['exif'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('EXIF'),
+      '#description' => t('These settings are only relevant if you have selected %exif above.', array('%exif' => t('Get from image EXIF data'))),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    $form['advanced']['exif']['imagefield_import_exif_title'] = array(
+      '#type' => 'select',
+      '#title' => t('EXIF title'),
+      '#description' => t('Select the EXIF field you want to use to prepopulate the title field on the import form.'),
+      '#options' => _imagefield_import_exif_options(),
+      '#default_value' => variable_get('imagefield_import_exif_title', 'FileName'),
+    );
+    $form['advanced']['exif']['imagefield_import_exif_body'] = array(
+      '#type' => 'select',
+      '#title' => t('EXIF body'),
+      '#description' => t('Select the EXIF field you want to use to prepopulate the body field on the import form.'),
+      '#options' => _imagefield_import_exif_options(),
+      '#default_value' => variable_get('imagefield_import_exif_body', 'ImageDescription'),
+    );
+  }
+  if (isset($prepop_options[IMAGEFIELD_IMPORT_PREPOP_IPTC])) {
+    $form['advanced']['iptc'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('IPTC'),
+      '#description' => t('These settings are only relevant if you have selected %iptc above.', array('%iptc' => t('Get from image IPTC data'))),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    $form['advanced']['iptc']['imagefield_import_iptc_title'] = array(
+      '#type' => 'select',
+      '#title' => t('IPTC title'),
+      '#description' => t('Select the IPTC field you want to use to prepopulate the title field on the import form.'),
+      '#options' => _imagefield_import_iptc_options(),
+      '#default_value' => variable_get('imagefield_import_iptc_title', '2#005'),
+    );
+    $form['advanced']['iptc']['imagefield_import_iptc_body'] = array(
+      '#type' => 'select',
+      '#title' => t('IPTC body'),
+      '#description' => t('Select the IPTC field you want to use to prepopulate the body field on the import form.'),
+      '#options' => _imagefield_import_iptc_options(),
+      '#default_value' => variable_get('imagefield_import_iptc_body', '2#120'),
+    );
+  }
+  $form['advanced']['imagefield_import_show_form'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Display selection form'),
+    '#description' => t('Enable this option to display a form allowing you to choose which images to import. Disable this option if you want to import all images or if you are importing thousands of images. If you disable this option you will still be able to apply taxonomy terms and other information, but you will not be able to modify the title and body of each imported image node.'),
+    '#default_value' => variable_get('imagefield_import_show_form', TRUE),
+  );
+  $form['advanced']['imagefield_import_body_widget_type'] = array(
+    '#type' => 'radios',
+    '#title' => t('Body field widget type'),
+    '#description' => t('Select the widget you want to use to popuplate the body field of each imported image. Choose one of the textarea settings if you need to enter long descriptions of the imported images.'),
+    '#options' => array(
+      'textfield' => t('Textfield'),
+      'textarea' => t('Textarea'),
+      'textarea_resizable' => t('Textarea, resizable'),
+    ),
+    '#default_value' => variable_get('imagefield_import_body_widget_type', 'textfield'),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Menu callback; image import overview form.
+ */
+function imagefield_import_form() {
+  // make sure the upload directory is configured properly
+  $directory = variable_get('imagefield_import_path', file_directory_path() .'/images/import');
+  if (!file_check_directory($directory)) {
+    drupal_set_message(t("You need to configure the import directory on the !settings-url. If you don't have the proper permissions to do that, please contact the site administrator.", array('!settings-url' => l(t('Imagefield import settings page'), 'admin/settings/imagefield_import'))), 'error');
+    return;
+  }
+
+  // get a list of all files in the upload directory
+  $files = file_scan_directory($directory, '.*');
+  if (empty($files)) {
+    drupal_set_message(t('The upload directory %directory is empty.', array('%directory' => $directory)), 'error');
+    return;
+  }
+
+  unset($_SESSION['imagefield_import']);
+
+  list($type, $field) = split(':::', variable_get('imagefield_import_field', ''));
+
+  // show the selection form or a summary of how many images will be imported
+  if (variable_get('imagefield_import_show_form', TRUE)) {
+    $form = _imagefield_import_form_select($files, $type);
+  }
+  else {
+    $form = _imagefield_import_form_import_all($files);
+  }
+
+  $mode = variable_get('imagefield_import_mode', IMAGEFIELD_IMPORT_MULTIPLE_NODES);
+  if ($mode == IMAGEFIELD_IMPORT_SINGLE_NODE) {
+    $form['imagefield_import_title'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Title'),
+    );
+  }
+  else {
+    // add taxonomy widgets and any additional cck fields to the form
+    if ($type) {
+      _imagefield_import_extend_form($form, $type);
+    }
+  }
+
+  // add a submit button and make sure it's displayed at the bottom of the form
+  $form['buttons']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Import'),
+  );
+  $form['buttons']['#weight'] = 100;
+
+  return $form;
+}
+
+/**
+ * Create a form for selecting images to import.
+ */
+function _imagefield_import_form_select($files, $type) {
+  $form = $filelist = array();
+  $ignore = variable_get('imagefield_import_ignore', '');
+  $mode = variable_get('imagefield_import_mode', IMAGEFIELD_IMPORT_MULTIPLE_NODES);
+  $type = node_get_types('type', $type);
+
+  if (variable_get('imagefield_import_show_thumbnails', FALSE)) {
+    $form['#thumbnails'] = TRUE;
+    $thumbnail_width = variable_get('imagefield_import_thumbnail_width', 100);
+  }
+
+  ksort($files);
+  foreach ($files as $file) {
+    $filename = basename($file->filename);
+    $filepath = $file->filename;
+
+    // abort if the current file matches the ignore regexp
+    if ($ignore && preg_match($ignore, $filename)) {
+      continue;
+    }
+
+    $info = image_get_info($filepath);
+    if ($info && isset($info['extension'])) {
+      $filelist[$filepath] = ''; // we don't need labels on the checkboxes
+      $form['files']['filesize'][$filepath] = array('#value' => filesize($filepath));
+      $form['files']['dimensions'][$filepath] = array('#value' => $info['width'] .'×'. $info['height']);
+      $form['files']['writable'][$filepath] = array('#value' => is_writable($filepath));
+      if (variable_get('imagefield_import_status', FALSE)) {
+        // add a select widget for setting node status during import, use the
+        // (optional) regexp to set certain files as unpublished by default
+        $form['files']['node_status'][$filepath] = array(
+          '#type' => 'select',
+          '#options' => array(
+            TRUE => t('Published'),
+            FALSE => t('Unpublished'),
+          ),
+          '#default_value' => 1,
+        );
+        $unpublish = variable_get('imagefield_import_unpublish', '');
+        if ($unpublish && preg_match($unpublish, $filename)) {
+          $form['files']['node_status'][$filepath]['#default_value'] = 0;
+        }
+      }
+
+      // preopulate the title and body fields with the filename or data pulled
+      // from exif or iptc depending on the configuration
+      if ($mode == IMAGEFIELD_IMPORT_MULTIPLE_NODES) {
+        list($title, $body) = _imagefield_import_get_title_body($file);
+        $form['files']['title'][$filepath] = array(
+          '#type' => 'textfield',
+          '#size' => 20,
+          '#default_value' => $title,
+        );
+        if ($type->has_body) {
+          $widget = variable_get('imagefield_import_body_widget_type', 'textfield');
+          if ('textfield' == $widget) {
+            $form['files']['body'][$filepath] = array(
+              '#type' => 'textfield',
+              '#size' => 20,
+              '#maxlength' => 512,
+              '#default_value' => $body,
+            );
+          }
+          else {
+            $form['files']['body'][$filepath] = array(
+              '#type' => 'textarea',
+              '#rows' => 1,
+              '#cols' => 20,
+              '#resizable' => FALSE,
+              '#default_value' => $body,
+            );
+            if ('textarea_resizable' == $widget) {
+              $form['files']['body'][$filepath]['#resizable'] = TRUE;
+            }
+          }
+        }
+      }
+
+      if ($form['#thumbnails']) {
+        $form['files']['thumbnail'][$filepath] = array(
+          '#value' => theme('imagefield_import_thumbnail', $file->filename, $thumbnail_width),
+        );
+      }
+    }
+  }
+
+  if (empty($filelist)) {
+    drupal_set_message('The import folder has been correctly configured, but it seems that none of the files in the folder can be read by the webserver. Please fix the permissions and try again.', 'error');
+  }
+
+  // mark as trees so we can access the individual values later
+  $form['files']['title']['#tree'] = TRUE;
+  $form['files']['body']['#tree'] = TRUE;
+  $form['files']['node_status']['#tree'] = TRUE;
+
+  // add checkboxes for the files in the upload directory
+  $form['import'] = array(
+    '#type' => 'checkboxes',
+    '#options' => $filelist,
+  );
+
+  return $form;
+}
+
+/**
+ * Create a form for importing all images.
+ */
+function _imagefield_import_form_import_all($files) {
+  $form = $options = array();
+  $ignore = variable_get('imagefield_import_ignore', '');
+
+  foreach ($files as $file) {
+    // abort if the current file matches the ignore regexp
+    if ($ignore && preg_match($ignore, basename($file->filename))) {
+      continue;
+    }
+
+    $info = image_get_info($file->filename);
+    if ($info && isset($info['extension'])) {
+      $options[$file->filename] = TRUE;
+    }
+  }
+
+  // this matches the checkbox array of the default selection form. this lets
+  // us use the same submit handler in both cases
+  $form['import'] = array(
+    '#type' => 'value',
+    '#value' => $options,
+  );
+  $form['imagefield_import_message'] = array(
+    '#value' => '<p><strong>'. t('All @count images in the import folder will be imported.', array('@count' => count($options))) .'</strong></p>',
+    '#weight' => -10,
+  );
+
+  return $form;
+}
+
+/**
+ * Validate handler for the import form.
+ */
+function imagefield_import_form_validate($form, &$form_state) {
+  $mode = variable_get('imagefield_import_mode', IMAGEFIELD_IMPORT_MULTIPLE_NODES);
+  if (variable_get('imagefield_import_show_form', TRUE) && $mode == IMAGEFIELD_IMPORT_MULTIPLE_NODES) {
+    // make sure that a title has been set for all images
+    foreach ($form_state['values']['title'] as $filepath => $title) {
+      if ($form_state['values']['import'][$filepath] && $title == '') {
+        form_set_error('title]['. $filepath, t('You must enter a title for each image.'));
+      }
+    }
+  }
+}
+
+/**
+ * Submit handler for the import form.
+ */
+function imagefield_import_form_submit($form, &$form_state) {
+  $operations = array();
+  $directory = variable_get('imagefield_import_path', file_directory_path() .'/images/import');
+  $mode = variable_get('imagefield_import_mode', IMAGEFIELD_IMPORT_MULTIPLE_NODES);
+
+  if (file_check_directory($directory)) {
+    foreach ($form_state['values']['import'] as $filepath => $import) {
+      if ($import) {
+        $values = _imagefield_import_clean_values($form_state['values'], $filepath);
+        $_SESSION['imagefield_import']['files'][$filepath] = $values;
+      }
+    }
+    if ($mode == IMAGEFIELD_IMPORT_SINGLE_NODE) {
+      $_SESSION['imagefield_import']['title'] = $form_state['values']['imagefield_import_title'];
+    }
+
+    $form_state['redirect'] = 'admin/content/imagefield_import/confirm';
+  }
+}
+
+/**
+ * Menu callback; image import confirmation form.
+ */
+function imagefield_import_confirm() {
+  if (empty($_SESSION['imagefield_import']['files'])) {
+    drupal_set_message(t('No images have been selected for import. Please return to the !url.', array('!url' => l(t('Import images page'), 'admin/content/imagefield_import'))), 'error');
+    return;
+  }
+
+  $count = count($_SESSION['imagefield_import']['files']);
+  $path = variable_get('imagefield_import_path', file_directory_path() .'/images/import');
+
+  return confirm_form(
+    array(),
+    t('Are you sure you want to import @count images?', array('@count' => $count)),
+    'admin/content/imagefield_import',
+    t('@count images will be imported from the folder %path. This action cannot be undone.', array('@count' => $count, '%path' => $path)),
+    t('Import images'),
+    t('Cancel')
+  );
+}
+
+/**
+ * Submit handler for the confirmation form.
+ */
+function imagefield_import_confirm_submit($form, &$form_state) {
+  $operations = array();
+  $mode = variable_get('imagefield_import_mode', IMAGEFIELD_IMPORT_MULTIPLE_NODES);
+
+  if ($mode == IMAGEFIELD_IMPORT_SINGLE_NODE) {
+    _imagefield_import_confirm_submit_single_node($form, $form_state);
+  }
+  else {
+    _imagefield_import_confirm_submit_multiple_nodes($form, $form_state);
+  }
+
+  unset($_SESSION['imagefield_import']);
+}
+
+/**
+ * Setup a batch process for importing multiple images to a single node.
+ */
+function _imagefield_import_confirm_submit_single_node($form, &$form_state) {
+  global $user;
+
+  list($type, $field_name) = split(':::', variable_get('imagefield_import_field', ''));
+  $field = content_fields($field_name, $type);
+
+  $form_state['values']['title'] = $_SESSION['imagefield_import']['title'];
+  $form_state['values']['body'] = '';
+  $node = _imagefield_import_create_node($field, $form_state['values']);
+
+  // create a batch operation for each selected file...
+  foreach ($_SESSION['imagefield_import']['files'] as $filepath => $data) {
+    $operations[] = array(
+      '_imagefield_import_batch_process_single',
+      array(
+        $node->nid,
+        $filepath,
+        $data,
+      ),
+    );
+  }
+
+  // ...and set up a batch job to execute the operations
+  if (!empty($operations)) {
+    $batch = array(
+      'operations' => $operations,
+      'finished' => '_imagefield_import_batch_finished',
+      'title' => t('Importing images to a single node'),
+      'init_message' => t('Image import is starting.'),
+      'progress_message' => t('Imported @current out of @total.'),
+      'error_message' => t('Image import has encountered an error.'),
+    );
+    batch_set($batch);
+  }
+
+  $form_state['redirect'] = 'node/'. $node->nid .'/edit';
+}
+
+/**
+ * Setup a batch process for importing images to multiple nodes.
+ */
+function _imagefield_import_confirm_submit_multiple_nodes($form, &$form_state) {
+  // create a batch operation for each selected file...
+  foreach ($_SESSION['imagefield_import']['files'] as $filepath => $data) {
+    $operations[] = array(
+      '_imagefield_import_batch_process_multiple',
+      array(
+        $filepath,
+        $data,
+      ),
+    );
+  }
+
+  // ...and set up a batch job to execute the operations
+  if (!empty($operations)) {
+    $batch = array(
+      'operations' => $operations,
+      'finished' => '_imagefield_import_batch_finished',
+      'title' => t('Importing images to separate nodes'),
+      'init_message' => t('Image import is starting.'),
+      'progress_message' => t('Imported @current out of @total.'),
+      'error_message' => t('Image import has encountered an error.'),
+    );
+    batch_set($batch);
+  }
+
+  $form_state['redirect'] = 'admin/content/imagefield_import';
+}
+
+/* --- BATCH ---------------------------------------------------------------- */
+
+/**
+ * Batch API process handler for importing multiple images to a single node.
+ */
+function _imagefield_import_batch_process_single($nid, $filepath, $form_state_values, &$context) {
+  $directory = variable_get('imagefield_import_path', file_directory_path() .'/images/import');
+  if (file_check_location($filepath, $directory) && $info = image_get_info($filepath)) {
+    list($type, $field_name) = split(':::', variable_get('imagefield_import_field', ''));
+
+    // get the field and its validators
+    $field = content_fields($field_name, $type);
+    $validators = imagefield_widget_upload_validators($field);
+
+    // make sure that the directory exists
+    $directory = filefield_widget_file_path($field);
+    field_file_check_directory($directory, FILE_CREATE_DIRECTORY);
+
+    // save the file and add it to the node
+    if ($file = field_file_save_file($filepath, $validators, $directory)) {
+      $file['original_path'] = $filepath;
+      $node = node_load($nid, NULL, TRUE);
+
+      // actually do the adding
+      $field_name = $field['field_name'];
+      array_push($node->$field_name, $file);
+
+      // pretend we're saving the node from a node form to please modules like filefield_paths
+      $node->form_id = $node->type .'_node_form';
+
+      $node = node_submit($node);
+      node_save($node);
+
+      if (variable_get('imagefield_import_delete', TRUE)) {
+        file_delete($filepath);
+      }
+      $context['results'][] = $filepath;
+    }
+  }
+}
+
+/**
+ * Batch API process handler for importing images to separate nodes.
+ */
+function _imagefield_import_batch_process_multiple($filepath, $form_state_values, &$context) {
+  $directory = variable_get('imagefield_import_path', file_directory_path() .'/images/import');
+  if (file_check_location($filepath, $directory) && $info = image_get_info($filepath)) {
+    list($type, $field_name) = split(':::', variable_get('imagefield_import_field', ''));
+
+    // get the field and its validators
+    $field = content_fields($field_name, $type);
+    $validators = imagefield_widget_upload_validators($field);
+
+    // make sure that the directory exists
+    $directory = filefield_widget_file_path($field);
+    field_file_check_directory($directory, FILE_CREATE_DIRECTORY);
+
+    // save the file and create a node
+    if ($file = field_file_save_file($filepath, $validators, $directory)) {
+      $file['original_path'] = $filepath;
+      $node = _imagefield_import_create_node($field, $form_state_values, $file);
+      if (variable_get('imagefield_import_delete', TRUE)) {
+        file_delete($filepath);
+      }
+      $context['results'][] = $filepath;
+    }
+  }
+}
+
+/**
+ * Batch API finished handler.
+ */
+function _imagefield_import_batch_finished($success, $results, $operations) {
+  if ($success) {
+    $message = t('@count images imported.', array('@count' => count($results)));
+    $message .= theme('item_list', $results);
+  }
+  else {
+    $error_operation = reset($operations);
+    $message = t('An error occurred while processing %error_operation with arguments: @arguments', array('%error_operation' => $error_operation[0], '@arguments' => print_r($error_operation[1], TRUE)));
+  }
+
+  drupal_set_message($message);
+}
+
+/* --- UTILITY -------------------------------------------------------------- */
+
+/**
+ * Find all node types containing an imagefield.
+ */
+function _imagefield_import_available_node_types() {
+  $available = array();
+
+  $types = content_types();
+  foreach ($types as $key => $type) {
+    foreach ($type['fields'] as $field) {
+      if ($field['type'] == 'filefield') {
+        $available['matches'][$key .':::'. $field['field_name']] = $type['name'] .': '. $field['widget']['label'];
+        $available['keys'][] = $key .':::'. $field['field_name'];
+      }
+    }
+  }
+
+  return $available;
+}
+
+/**
+ * Checks the existence of the directory specified in $form_element.
+ */
+function _imagefield_import_check_directory($form_element) {
+  $directory = $form_element['#value'];
+
+  file_check_directory($directory, TRUE, $form_element['#parents'][0]);
+
+  $imagefield_dir = file_create_path(variable_get('imagefield_default_path', 'images'));
+  if (realpath($directory) == realpath($imagefield_dir)) {
+    form_set_error($form_element['#parents'][0], t("You can't import from the image module's directory. The import deletes the original files so you would just be asking for trouble."));
+  }
+
+  return $form_element;
+}
+
+/**
+ * Remove unneeded values from the form state. This is an attempt to minimize
+ * the memory footprint when importing a lot of files at once (because
+ * batch_process() will have less data to serialize).
+ */
+function _imagefield_import_clean_values($values, $filepath) {
+  // we only need the values related to the current filename
+  $values['title'] = $values['title'][$filepath];
+  $values['body'] = $values['body'][$filepath];
+  $values['node_status'] = $values['node_status'][$filepath];
+
+  // if we're not using the selection form, we have to make sure that node
+  // titles and publishing status get sensible default values
+  if (!variable_get('imagefield_import_show_form', TRUE)) {
+    $file = new stdClass();
+    $file->name = basename($filepath);
+    $file->filename = $filepath;
+
+    list($title, $body) = _imagefield_import_get_title_body($file);
+
+    $values['title'] = $title;
+
+    $unpublish = variable_get('imagefield_import_unpublish', '');
+    if ($unpublish && preg_match($unpublish, $file->name)) {
+      $values['node_status'] = 0;
+    }
+    else {
+      $values['node_status'] = 1;
+    }
+  }
+
+  // unset stuff we don't need during batch operations
+  unset($values['import']);
+  unset($values['imagefield_import_title']);
+  unset($values['type']);
+  unset($values['op']);
+  unset($values['submit']);
+  unset($values['form_build_id']);
+  unset($values['form_token']);
+  unset($values['form_id']);
+
+  return $values;
+}
+
+/**
+ * Create a new node with an attached image file.
+ */
+function _imagefield_import_create_node($field, $form_state_values, $file = NULL) {
+  global $user;
+
+  module_load_include('inc', 'node', 'node.pages');
+
+  // create a basic node object
+  $node = new stdClass();
+  $node->type = $field['type_name'];
+  $node->uid = $user->uid;
+  $node->name = $user->name;
+  $node->title = $form_state_values['title'];
+  $node->body = $form_state_values['body'];
+
+  node_object_prepare($node);
+
+  if (variable_get('imagefield_import_status', FALSE)) {
+    $node->status = $form_state_values['node_status'] ? TRUE : FALSE;
+    unset($form_state_values['node_status']);
+  }
+
+  // add the image to the node object
+  $field_name = $field['field_name'];
+  $node->$field_name = array($file);
+
+  // make it easy for other modules to add data to imported nodes using
+  // hook_form_alter (@see http://drupal.org/node/714550).
+  foreach (array_keys($form_state_values) as $key) {
+    if (!isset($node->$key)) {
+      $node->$key = $form_state_values[$key];
+    }
+  }
+
+  // add any additional cck fields set during import
+  $type = content_types($field['type_name']);
+  if (!empty($type['fields'])) {
+    foreach ($type['fields'] as $name => $field) {
+      if ($field['type'] != 'filefield') {
+        $node->$name = $form_state_values[$name];
+      }
+    }
+  }
+
+  // pretend we're saving the node from a node form to please modules like filefield_paths
+  $node->form_id = $node->type .'_node_form';
+
+  $node = node_submit($node);
+  node_save($node);
+
+  return $node;
+}
+
+/**
+ * Get data for prepopulating the title and body fields on the import form.
+ */
+function _imagefield_import_get_title_body($file) {
+  $prepop = variable_get('imagefield_import_prepopulate_title', IMAGEFIELD_IMPORT_PREPOP_OFF);
+  $title = $body = '';
+
+  // if the selection form has been disabled we need to make sure that we have
+  // valid titles for the nodes we're creating
+  if ($prepop == IMAGEFIELD_IMPORT_PREPOP_OFF && !variable_get('imagefield_import_show_form', TRUE)) {
+    $prepop = IMAGEFIELD_IMPORT_PREPOP_FILENAME;
+  }
+
+  switch ($prepop) {
+    case IMAGEFIELD_IMPORT_PREPOP_OFF:
+      break;
+    case IMAGEFIELD_IMPORT_PREPOP_FILENAME:
+      $title = $file->name;
+      break;
+    case IMAGEFIELD_IMPORT_PREPOP_EXIF:
+      if (function_exists('exif_read_data')) {
+        $exif = @exif_read_data($file->filename, 'IFD0');
+        if (is_array($exif)) {
+          $title = $exif[variable_get('imagefield_import_exif_title', 'FileName')];
+          $body = $exif[variable_get('imagefield_import_exif_body', 'ImageDescription')];
+        }
+      }
+      break;
+    case IMAGEFIELD_IMPORT_PREPOP_IPTC:
+      $size = getimagesize($file->filename, $info);
+      if (is_array($info)) {
+        $iptc = iptcparse($info['APP13']);
+        $title = @iconv('Windows-1252', 'UTF-8//TRANSLIT', $iptc[variable_get('imagefield_import_iptc_title', '2#005')][0]);
+        $body = @iconv('Windows-1252', 'UTF-8//TRANSLIT', $iptc[variable_get('imagefield_import_iptc_body', '2#120')][0]);
+      }
+      break;
+  }
+
+  return array($title, $body);
+}
+
+/**
+ * Add the standard taxonomy form and additional cck fields to the image import form.
+ */
+function _imagefield_import_extend_form(&$form, $type) {
+  $form_id = $type .'_node_form';
+
+  $form['type'] = array('#type' => 'value', '#value' => $type);
+  $form['#node'] = new stdClass();
+  $form['#node']->type = $type;
+
+  $form_state = array();
+
+  if (module_exists('taxonomy')) {
+    taxonomy_form_alter($form, $form_state, $form_id);
+  }
+  content_form_alter($form, $form_state, $form_id);
+
+  // TODO: check whether hierarchical select is enabled for this content type
+  if (module_exists('hs_taxonomy')) {
+    hs_taxonomy_form_alter($form, $form_state, $form_id);
+  }
+
+  $type = content_types($type);
+  if (!empty($type['fields'])) {
+    foreach ($type['fields'] as $name => $field) {
+      if ('filefield' == $field['type']) {
+        $form[$name]['#access'] = FALSE;
+      }
+    }
+  }
+
+  unset($form['#node']);
+  unset($form['#validate']); // get rid of filefield_node_form_validate()
+}
+
+/**
+ * Determine the maximum allowed size of uploaded files.
+ */
+function _imagefield_import_upload_max_filesize() {
+  $available = _imagefield_import_available_node_types();
+  list($type, $field_name) = split(':::', variable_get('imagefield_import_field', $available['keys'][0]));
+  $field = content_fields($field_name, $type);
+
+  $upload_max_filesize = 0;
+  if (!empty($field['widget']['max_filesize_per_file'])) {
+    $upload_max_filesize = parse_size($field['widget']['max_filesize_per_file']);
+  }
+  else {
+    $upload_max_filesize = parse_size(ini_get('upload_max_filesize'));
+  }
+
+  return $upload_max_filesize;
+}
+
+/**
+ * Create a header for the overview form.
+ */
+function _imagefield_import_table_header($form) {
+  $type = node_get_types('type', $form['type']['#value']);
+
+  $header = array(
+    theme('table_select_header_cell'),
+    t('File'),
+    $type->title_label,
+  );
+  if ($type->has_body) {
+    $header[] = $type->body_label;
+  }
+
+  $mode = variable_get('imagefield_import_mode', IMAGEFIELD_IMPORT_MULTIPLE_NODES);
+  if ($mode == IMAGEFIELD_IMPORT_SINGLE_NODE) {
+    array_splice($header, 2, 2);
+  }
+
+  if ($form['#thumbnails']) {
+    array_splice($header, 1, NULL, t('Thumbnail'));
+  }
+
+  if (variable_get('imagefield_import_status', FALSE)) {
+    $header[] = t('Status');
+  }
+
+  return $header;
+}
+
+/**
+ * Returns an array of available prepopulation options.
+ */
+function _imagefield_import_prepopulate_options() {
+  $options = array(
+    IMAGEFIELD_IMPORT_PREPOP_OFF => t("Don't prepopulate"),
+    IMAGEFIELD_IMPORT_PREPOP_FILENAME => t('Use filename as title'),
+  );
+
+  if (function_exists('exif_read_data')) {
+    $options[IMAGEFIELD_IMPORT_PREPOP_EXIF] = t('Get from image EXIF data');
+  }
+
+  if (function_exists('iptcparse')) {
+    $options[IMAGEFIELD_IMPORT_PREPOP_IPTC] = t('Get from image IPTC data');
+  }
+
+  return $options;
+}
+
+/**
+ * Returns an array of available EXIF fields.
+ */
+function _imagefield_import_exif_options() {
+  return array(
+    'FileName' => t('Filename'),
+    'FileDateTime' => t('Unix timestamp'),
+    'FileSize' => t('File size'),
+    'MimeType' => t('Mime type'),
+    'ImageDescription' => t('Description'),
+    'Software' => t('Software'),
+    'DateTime' => t('Date and time'),
+    'Artist' => t('Artist'),
+    'Copyright' => t('Copyright'),
+  );
+}
+
+/**
+ * Returns an array of available IPTC fields.
+ *
+ * @see http://www.iptc.org/cms/site/index.html?channel=CH0100
+ * @see http://www.iptc.org/std/photometadata/specification/IPTC-PhotoMetadata%28200907%29_1.pdf
+ */
+function _imagefield_import_iptc_options() {
+  return array(
+    '2#005' => t('Object name'),
+    '2#040' => t('Special instructions'),
+    '2#055' => t('Date created'),
+    '2#080' => t('Byline'),
+    '2#085' => t('Byline title'),
+    '2#090' => t('City'),
+    '2#095' => t('Province/state'),
+    '2#101' => t('Country/primary location name'),
+    '2#103' => t('Original transmission reference'),
+    '2#105' => t('Headline'),
+    '2#110' => t('Credit'),
+    '2#115' => t('Source'),
+    '2#116' => t('Copyright notice'),
+    '2#120' => t('Caption/abstract'),
+  );
+}
+
+/* --- THEME ---------------------------------------------------------------- */
+
+/**
+ * Theme the filename in the table on the import form.
+ */
+function theme_imagefield_import_filename($filepath, $size, $oversize, $dimensions, $status) {
+  $output = '';
+
+  $output .= check_plain(basename($filepath)) .'<br />';
+  $output .= '<div class="container-inline"><small>';
+  if ($oversize) {
+    $output .= $dimensions .' &nbsp; <span style="color: #600"><strong>'. format_size($size) .'</strong></span> &nbsp; ';
+  }
+  else {
+    $output .= $dimensions .' &nbsp; '. format_size($size) .' &nbsp; ';
+  }
+  if ($status) {
+    $output .= '<span style="color: #060">'. t('WRITABLE') .'</span>';
+  }
+  else {
+    $output .= '<span style="color: #600">'. t('NOT WRITABLE') .'</span>';
+  }
+  $output .= '</small></div>';
+
+  return $output;
+}
+
+/**
+ * Theme the image import form.
+ */
+function theme_imagefield_import_form($form) {
+  $output = $last_dir = '';
+  $upload_max_filesize = _imagefield_import_upload_max_filesize();
+
+  if (isset($form['import'])) {
+    $header = _imagefield_import_table_header($form);
+    $colspan = count($header);
+
+    $rows = array();
+    foreach (element_children($form['import']) as $filepath) {
+      $row = array();
+
+      $current_dir = dirname($filepath);
+      if ($current_dir != $last_dir) {
+        $rows[] = array(array('data' => $current_dir, 'colspan' => $colspan, 'class' => 'category'));
+        $last_dir = $current_dir;
+      }
+
+      $row[] = drupal_render($form['import'][$filepath]);
+      if ($form['#thumbnails']) {
+        $row[] = drupal_render($form['files']['thumbnail'][$filepath]);
+      }
+      $row[] = theme('imagefield_import_filename', $filepath, drupal_render($form['files']['filesize'][$filepath]), $form['files']['filesize'][$filepath]['#value'] > $upload_max_filesize, drupal_render($form['files']['dimensions'][$filepath]), drupal_render($form['files']['writable'][$filepath]));
+      if (isset($form['files']['title'][$filepath])) {
+        $row[] = drupal_render($form['files']['title'][$filepath]);
+      }
+      if (isset($form['files']['body'][$filepath])) {
+        $row[] = drupal_render($form['files']['body'][$filepath]);
+      }
+      if (variable_get('imagefield_import_status', FALSE)) {
+        $row[] = drupal_render($form['files']['node_status'][$filepath]);
+      }
+
+      $rows[] = $row;
+    }
+
+    if (!empty($form['import']['#options'])) {
+      $output .= theme('table', $header, $rows);
+      $output .= '<div class="description">'. t('Click the checkboxes next to the images you want to import. You can add a title and a body to each image before you start the import.') .'</div>';
+    }
+  }
+
+  return $output . drupal_render($form);
+}
+
+/**
+ * Theme a thumbnail.
+ */
+function theme_imagefield_import_thumbnail($filename, $width) {
+  return theme('image', $filename, '', '', array('width' => $width), FALSE);
+}

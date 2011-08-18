@@ -1,0 +1,93 @@
+/*
+_______________________________
+LAYOUT */
+
+* html body
+{
+	text-align:center;
+}
+
+#container
+{
+	position:relative;
+	text-align:left;
+	margin:0 auto;
+}
+
+#header
+{
+	position:relative;
+}
+
+#primary, #secondary, #tertiary
+{
+	position:relative;
+	float:left;
+}
+
+* html #primary, * html #secondary, * html #tertiary
+{
+	display:inline;
+}
+
+#footer
+{
+	clear:both;
+	float:left;
+	width:100%;
+	position:relative;
+}
+
+body.l1 #tertiary, body.l2 #tertiary, body.l3 #tertiary
+{
+	display:none;
+}
+
+/* \*/
+body.equal #container
+{
+	overflow:hidden;
+	padding-bottom:0;
+}
+
+body.equal #primary, body.equal #secondary, body.equal #tertiary
+{
+	margin-bottom:-32767px;
+	padding-bottom:32767px;
+}
+
+* html body.equal #container
+{
+	padding-bottom:0;
+}
+/* */
+
+body.l1 #footer, body.l2 #footer, body.l3 #footer
+{
+	margin-bottom:0;
+}
+
+
+@media all and (min-width: 0px)
+{
+	body.l2 #secondary
+	{
+		left:.5em;
+	}
+	
+	body.equal #primary, body.equal #secondary, body.equal #tertiary
+	{
+		padding-bottom:0!important;
+		margin-bottom:0!important;
+	}
+	
+	body.equal #primary[id^="primary"]:before, body.equal #secondary[id^="secondary"]:before, body.equal #tertiary[id^="tertiary"]:before
+	{
+		content:'Q';
+		display:block;
+		background:inherit;
+		padding-top:32767px!important;
+		margin-bottom:-32767px!important;
+		height:0;
+	}
+}

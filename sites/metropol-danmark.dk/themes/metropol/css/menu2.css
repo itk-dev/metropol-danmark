@@ -1,0 +1,89 @@
+/* navigation
+
+------------------------------------------*/
+#menulist{
+width:680px;
+/*margin: 85px 0 0 290px;*/
+position:absolute;
+top:85px;
+left:290px;
+height:28px;}
+
+#menulist ul{
+padding:0;
+margin:0;
+}
+
+
+#menulist ul.links li {
+
+list-style: none;
+float: left;
+position: relative;
+margin-left:2px;
+padding:0;
+
+}
+
+#menulist .links li a {
+
+height: 28px;
+text-indent: -9000px;
+display: block;
+
+}
+
+#menunav .current a { background-position: 0 -28px; }
+
+/* buttons
+
+------------------------------------------*/
+
+li.menu-323 a,
+li.menu-379 a,
+li.menu-496 a,
+li.menu-502 a,
+li.menu-503 a,
+li.menu-483 a,
+li.menu-600 a,
+a#Pr,
+a#Ny, 
+a#Ak,
+a#Ko{
+height: 28px;
+}
+li.menu-323 a {width:97px;}
+li.menu-379 a{width:121px;}
+li.menu-496 a{width:88px;}
+li.menu-502 a{width:80px;}
+li.menu-503 a{width:91px;}
+li.menu-483 a{width:96px;}
+li.menu-600 a{width:81px;}
+
+li.menu-323 a{ background-image:url("../img/menu2/vi.gif"); }
+li.menu-379 a { background-image:url("../img/menu2/ka.gif"); }
+li.menu-483 a{ background-image:url("../img/menu2/pu.gif"); }
+li.menu-496 a{ background-image:url("../img/menu2/pr.gif"); }
+li.menu-502 a{ background-image:url("../img/menu2/ny.gif"); }
+li.menu-503 a { background-image:url("../img/menu2/ak.gif"); }
+li.menu-600 a { background-image:url("../img/menu2/ko.gif"); }
+
+li.menu-323 a:hover,
+li.menu-323 a.active,
+li.menu-379 a:hover,
+li.menu-379 a.active,
+li.menu-483 a:hover,
+li.menu-483 a.active,
+li.menu-496 a:hover,
+li.menu-496 a.active,
+li.menu-502 a:hover, 
+li.menu-502 a.active, 
+li.menu-503 a:hover,
+li.menu-503 a.active,
+li.menu-600 a:hover,
+li.menu-600 a.active,
+li.active-trail a
+{ background-position: 0 -28px; }
+
+
+

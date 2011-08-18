@@ -1,0 +1,13 @@
+; $Id: sitedir_migrate_profile_picture.info,v 1.1 2009/12/29 16:40:43 andrewmriley Exp $ 
+name = "Migrate Profile Picture"
+description = "Migrates the path for profile pictures"
+package = "Migrate"
+core = "6.x"
+dependencies[] = sitedir_migrate
+dependencies[] = profile
+; Information added by drupal.org packaging script on 2009-12-29
+version = "6.x-1.0-beta2"
+core = "6.x"
+project = "sitedir_migrate"
+datestamp = "1262112055"
+

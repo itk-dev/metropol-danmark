@@ -1,0 +1,26 @@
+<?php
+// $Id: csstidy.install,v 1.7 2010/10/04 23:08:25 philbar Exp $
+
+/**
+ * @file
+ * Install, update and uninstall functions for the XXX module.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function csstidy_install() {
+  // Set the module's weight high so that it runs after other modules.
+  db_query("UPDATE {system} SET weight = 9999 WHERE name = 'csstidy' AND type = 'module'");
+  cache_clear_all();
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function csstidy_uninstall() {
+  variable_del('csstidy_readable');
+  variable_del('csstidy_mute_messages');
+  variable_del('csstidy_messages');
+  variable_del('csstidy_ratio');
+}

@@ -1,0 +1,14 @@
+; $Id: fontsquirrel.info,v 1.2.2.1 2011/01/02 21:33:05 sreynen Exp $
+name = Font Squirrel API
+description = @font-your-face provider with Font Squirrel fonts.
+dependencies[] = fontyourface
+package = @font-your-face
+core = 6.x
+php = 5.2.0
+
+; Information added by drupal.org packaging script on 2011-02-20
+version = "6.x-2.3"
+core = "6.x"
+project = "fontyourface"
+datestamp = "1298233025"
+

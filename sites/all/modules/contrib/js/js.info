@@ -1,0 +1,9 @@
+name = JavaScript callback handler
+description = A high-performance JavaScript callback handler for 3rd party modules.
+
+; Information added by drupal.org packaging script on 2011-02-25
+version = "6.x-2.x-dev"
+core = "6.x"
+project = "js"
+datestamp = "1298619508"
+

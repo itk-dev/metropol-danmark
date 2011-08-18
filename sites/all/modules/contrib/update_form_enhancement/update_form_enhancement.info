@@ -1,0 +1,12 @@
+; $Id: update_form_enhancement.info,v 1.1 2008/09/20 19:57:36 markuspetrux Exp $
+name = Update form enhancement
+description = Enhances update.php user interface by separating modules that are up to date from those that are not.
+package = Administration
+core = 6.x
+
+; Information added by drupal.org packaging script on 2009-02-21
+version = "6.x-1.5"
+core = "6.x"
+project = "update_form_enhancement"
+datestamp = "1235190673"
+

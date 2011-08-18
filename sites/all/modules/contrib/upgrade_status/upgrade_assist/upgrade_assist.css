@@ -1,0 +1,21 @@
+/* $Id: upgrade_assist.css,v 1.2 2008/10/23 07:12:01 sun Exp $ */
+
+ol.task-list {
+  margin-left: 0; /* LTR */
+  padding: 0;
+  list-style-type: none;
+  list-style-image: none;
+}
+ol.task-list li {
+  padding: 0.5em 1em 0.5em 2em; /* LTR */
+}
+ol.task-list li.active {
+  background: transparent url(images/task-list.png) no-repeat 3px 50%; /* LTR */
+}
+ol.task-list li.done {
+  color: #393;
+  background: transparent url(/misc/watchdog-ok.png) no-repeat 0px 50%; /* LTR */
+}
+ol.task-list li.active {
+  margin-right: 1em; /* LTR */
+}

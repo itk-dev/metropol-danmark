@@ -1,0 +1,98 @@
+/*
+_______________________________
+PRINT */
+
+body
+{
+  background:none !important;
+  color:#000 !important;
+  font:10pt/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin:0 !important;
+  padding:0 !important;
+  width:100% !important;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6
+{
+  font-family:"Helvetica Neue", Arial, "Lucida Grande", sans-serif;
+}
+
+hr
+{
+  background:#666;
+  border:none;
+  color:#666;
+  width:100%;
+  height:2px;
+  margin:2em 0;
+  padding:0;
+}
+
+code
+{
+  font:.9em "Courier New", Monaco, Courier, monospace;
+}
+
+blockquote
+{
+  margin:1.5em;
+  padding:1em;
+  font-style:italic;
+}
+
+/* Images */
+img
+{
+  float:left;
+  margin:1em 1.5em 1.5em 0;
+}
+
+a img
+{
+  border:none;
+}
+
+/* Links */
+a:link, a:visited
+{
+  background:transparent !important;
+  text-decoration:underline !important;
+}
+
+a:link:after, a:visited:after
+{
+  content:" (" attr(href) ") ";
+  font-size:90%;
+}
+
+/* Tables */
+table { margin:1px; text-align:left; }
+th { border-bottom:1px solid #333;  font-weight:bold; }
+td { border-bottom:1px solid #333; }
+th,td { padding:4px 10px 4px 0; }
+tfoot { font-style:italic; }
+caption { background:#fff; margin-bottom:2em; text-align:left; }
+thead {display:table-header-group;}
+tr {page-break-inside:avoid;} 
+
+#container
+{
+  overflow:visible !important;
+  width:100% !important;
+}
+
+#primary
+{
+  float:none;
+  width:100% !important;
+  margin:0 !important;
+  padding:0 !important;
+}
+
+/* Hide various parts of the site */
+#secondary, #tertiary, #footer
+{
+  visibility:hidden;
+  display:none;
+}

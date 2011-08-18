@@ -1,0 +1,177 @@
+<?php
+// $Id: upgrade_assist.module,v 1.2 2008/10/23 07:12:01 sun Exp $
+
+/**
+ * @file
+ * Assists in upgrading Drupal.
+ *
+ * WARNING: Maintenance mode is enabled UPON ENABLING this module.
+ */
+
+/**
+ * Return upgrade states.
+ *
+ * @param $render
+ *   (optional) TRUE to return an task list array suitable for theme_item_list().
+ */
+function upgrade_assist_states($render = FALSE) {
+  $states = array();
+
+  $states['offline'] = array(
+    'title' => t('Site set to offline'),
+    'status' => variable_get('site_offline', 0),
+  );
+
+  $states['backup-current'] = array(
+    'title' => t('Backup current site'),
+    'status' => (bool)module_invoke('demo', 'get_dump', 'upgrade_assist_current'),
+  );
+
+  // @todo Cache this using cache_set(), so it's invalidated when update.php runs.
+  if (module_exists('update_status')) {
+    $site_key = md5($base_url . drupal_get_private_key());
+    $project = array('name' => 'drupal', 'version' => VERSION);
+    $url = _update_status_build_fetch_url($project, $site_key);
+    $xml = drupal_http_request($url);
+    $data = array();
+    if (isset($xml->data)) {
+      $data[] = $xml->data;
+    }
+    if ($data) {
+      $parser = new update_status_xml_parser;
+      $available = $parser->parse($data);
+    }
+  }
+  $states['update-modules-5'] = array(
+    'title' => t('Update 5.x modules'),
+    'status' => $available['drupal']['recommended version'] < VERSION,
+  );
+
+  $states['backup-updated'] = array(
+    'title' => t('Backup updated site'),
+    'status' => (bool)module_invoke('demo', 'get_dump', 'upgrade_assist_updated'),
+  );
+
+  $states['garland-added'] = array(
+    'title' => t('Ensure Garland theme'),
+    'status' => (bool)file_exists('./themes/garland'),
+  );
+
+  $states['modules-downloaded'] = array(
+    'title' => t('Download upgraded modules'),
+    'status' => (bool)variable_get('upgrade_assist_status_modules_downloaded', FALSE),
+  );
+
+  $states['modules-disabled'] = array(
+    'title' => t('Disable contrib modules'),
+    'status' => (bool)variable_get('upgrade_assist_enabled_modules', array()),
+  );
+
+  $states['upgraded-drupal-core'] = array(
+    'title' => t('Upgrade Drupal core'),
+    'status' => (bool)(strpos(VERSION, '6') === 0),
+    // @todo Supply further info, properly replacing core files, updating/merging
+    //   settings.php, aso.
+  );
+
+  // @todo States for 6.x.
+  $states['ran-drupal-core-update'] = array(
+    'title' => t('Run update.php for Drupal core'),
+    'status' => (bool)(strpos(VERSION, '6') === 0), // @todo Schema version?
+  );
+
+  $modules = variable_get('upgrade_assist_enabled_modules', array());
+  if (isset($modules['content'])) {
+    $states['enabled-cck-core'] = array(
+      'title' => t('Enable CCK core'),
+      'status' => (bool)module_exists('content'), // @todo Also ensure other CCK core modules.
+      // @todo We can do this on behalf of the user!
+    );
+
+    $states['upgraded-cck-core'] = array(
+      'title' => t('Upgrade CCK core'),
+      'status' => (bool)(strpos(VERSION, '6') === 0), // @todo Schema version?
+    );
+
+    $states['ran-cck-core-update'] = array(
+      'title' => t('Run update.php for CCK core'),
+      'status' => (bool)(strpos(VERSION, '6') === 0), // @todo Schema version?
+    );
+  }
+
+  $states['upgraded-modules'] = array(
+    'title' => t('Upgrade contrib modules'),
+    'status' => (bool)(strpos(VERSION, '6') === 0), // @todo
+    // Iterate over upgrade_assist_enabled_modules, ~90% should be re-enabled,
+    // re-use information of upgrade_status_moved_into_core()!
+  );
+
+  $states['ran-modules-update'] = array(
+    'title' => t('Run update.php for contrib modules'),
+    'status' => (bool)(strpos(VERSION, '6') === 0), // @todo Schema version?
+  );
+
+  // Prepare states to be displayed in block as tasks.
+  if ($render) {
+    $items = array();
+    $active = TRUE;
+    foreach ($states as $name => $item) {
+      $items[$name]['data'] = $item['title'];
+      if ($item['status'] && $active) {
+        $items[$name]['class'] = 'done';
+      }
+      else {
+        $items[$name]['class'] = ($active ? 'active' : '');
+        $active = FALSE;
+      }
+    }
+    return $items;
+  }
+  return $states;
+}
+
+/**
+ * Implementation of hook_enable().
+ */
+function upgrade_assist_enable() {
+  if (strpos(VERSION, '5') === 0) {
+    // Enable maintenance mode.
+    variable_set('site_offline', 1);
+    drupal_set_message(t('This site is in maintenance mode now.'));
+    // Check whether Demo, Update Status and Upgrade Status are enabled.
+
+    // Enable our workflow block.
+    _block_rehash();
+  }
+  else {
+    
+  }
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function upgrade_assist_block($op = 'list', $delta = 0, $edit = array()) {
+  if ($op == 'list') {
+    $blocks['workflow'] = array(
+      'info' => t('Upgrade workflow'),
+      'region' => 'left',
+      'status' => 1,
+      'weight' => -10,
+    );
+    return $blocks;
+  }
+  else if ($op == 'view') {
+    $block = array();
+    switch($delta) {
+      case 'workflow':
+        drupal_add_css(drupal_get_path('module', 'upgrade_assist') .'/upgrade_assist.css');
+        $block['subject'] = t('Drupal Upgrade');
+        $tasks = upgrade_assist_states(TRUE);
+        $block['content'] = theme('item_list', $tasks, NULL, 'ol', array('class' => 'task-list'));
+        break;
+    }
+    return $block;
+  }
+}
+

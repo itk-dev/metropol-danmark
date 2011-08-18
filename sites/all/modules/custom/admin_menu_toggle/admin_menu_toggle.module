@@ -1,0 +1,17 @@
+<?php
+// $Id$
+/**
+ * @file
+ * Admin Menu Hider, to keep the admin menu out of the way.
+ *
+ * Admin Menu Hider will hide/show the admin menu with the press of a key.
+ */
+
+/**
+ * Implements hook_init().
+ */
+function admin_menu_toggle_init() {
+  $path = drupal_get_path('module', 'admin_menu_toggle');
+  drupal_add_js($path .'/admin_menu_toggle.js', 'module', 'header', TRUE);
+  drupal_add_css($path .'/admin_menu_toggle.css');
+}

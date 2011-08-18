@@ -1,0 +1,29 @@
+<?php
+// $Id: favicon.module,v 1.1.4.2 2008/08/07 03:53:42 robloach Exp $
+
+/**
+ * Implementation of hook_menu().
+ */
+function favicon_menu() {
+  // Override favicon.ico to forward to the theme's shortcut icon.
+  $items['favicon.ico'] = array(
+    'page callback' => 'favicon_shortcut_icon',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Menu callback; forwards to the favicon.
+ */
+function favicon_shortcut_icon() {
+  init_theme();
+  $favicon = theme_get_setting('favicon', TRUE);
+  if (empty($favicon)) {
+    drupal_not_found();
+  }
+  else {
+    header('Location: '. $favicon);
+  }
+}

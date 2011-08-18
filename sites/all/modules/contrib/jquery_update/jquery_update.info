@@ -1,0 +1,6 @@
+; $Id$
+name = jQuery Update
+description = Updates Drupal to use the latest version of jQuery.
+package = User interface
+core = 6.x
+version = "6.x-2.1"

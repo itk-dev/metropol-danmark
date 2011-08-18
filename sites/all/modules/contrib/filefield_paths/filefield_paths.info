@@ -1,0 +1,12 @@
+name = FileField Paths
+description = Adds improved Token based file sorting and renaming functionalities.
+dependencies[] = token
+package = FileField Paths
+core = 6.x
+
+; Information added by drupal.org packaging script on 2011-03-20
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "filefield_paths"
+datestamp = "1300622753"
+

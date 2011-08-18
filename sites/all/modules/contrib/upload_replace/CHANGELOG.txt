@@ -1,0 +1,9 @@
+6.x-1.2 - Fix #662772, #671090. Add support for files named like page_1.jpg page_2.jpg. Fixed imagecache files.
+6.x-1.1 - Fix #589996 which deleted the incorect file on website with revisioning disabled
+6.x-1.0 - Added a mime check so non-image files are not copied to the imagefield_thumbs directory
+  You may need to manually delete some non-image files from "<your-file-directory>/imagefield_thumbs" directory as they were copied there by a bug in the code(fixed in 1.0)
+6.x-1.0-RC5 - Added compatibility with imagecache and imagefield modules by clearing caches where needed
+6.x-1.0-RC4 - Fix order of variables in db_query statement
+6.x-1.0-RC3 - Mark filefield CCK as a dependency
+6.x-1.0-RC2 - Add README.txt
+6.x-1.0-RC1 - First release. Tested under drupal 6.13. Working with filefield CCK and node revisioning.

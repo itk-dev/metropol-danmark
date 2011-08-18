@@ -1,0 +1,400 @@
+<?php
+
+// $Id$
+
+/**
+ * Implementation of hook_help().
+ */
+function stylestripper_help($path, $arg) {
+  switch ($path) {
+    case 'admin/build/themes/stylestripper':
+      // Here is some help text for a custom page.
+      return t('This sentence contains all the letters in the English alphabet.');
+  }
+  
+  // Creating an array with theme paths and returning help text for these pathes
+  $theme_paths = array();
+  foreach (list_themes() as $theme) {
+    $theme_paths[] = 'admin/build/themes/stylestripper/'.$theme->name;
+  }
+  if (in_array($path, $theme_paths)) {
+    if (variable_get('stylestripper_enable_mode', 0)) {
+      return t('Check the CSS files that shoule be enabled in the theme.');
+    }
+    else {
+      return t('Check the CSS files that shoule be disabled in the theme.');
+    }
+  }
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function stylestripper_perm() {
+	return array('administer stylestrippper');
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function stylestripper_menu() {
+  $items = array();
+  $items['admin/build/themes/stylestripper'] = array(
+    'title' => 'Style stripper',
+    'description' => 'Configure what module CSS files should be loaded in your theme',
+    'page callback' => 'stylestripper_admin_global_settings',
+    'access arguments' => array('administer stylestrippper'),
+    'type' => MENU_LOCAL_TASK
+  );
+  $items['admin/build/themes/stylestripper/global'] = array(
+    'title' => 'Global settings',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -1,
+  );  
+  foreach (list_themes() as $theme) {
+    $items['admin/build/themes/stylestripper/'. $theme->name] = array(
+      'title' => $theme->info['name'],
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('stylestripper_admin_theme_settings', $theme->name),
+      'access callback' => '_stylestripper_admin_access',
+      'access arguments' => array($theme),
+      'type' => MENU_LOCAL_TASK      
+    );
+  }  
+  return $items;
+}
+
+/**
+ * Implementation of hook_theme()
+ */
+function stylestripper_theme() {
+  return array(
+    'stylestripper_admin_theme_settings' => array(
+      'arguments' => array('form' => NULL),
+    ),
+  );
+}
+
+/**
+ * Global settings for the style stripper module
+ *
+ * @return string
+ */
+function stylestripper_admin_global_settings() {
+  $output = drupal_get_form('_stylestripper_admin_global_settings_form');
+  $output .= drupal_get_form('_stylestripper_admin_search_form');
+  return $output;
+}
+
+/**
+ * Global settings form
+ *
+ * @return array
+ */
+function _stylestripper_admin_global_settings_form() {
+  $form['global'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Global settings'),
+    '#description' => t('Global settings for the style stripper module.'),
+  );
+  $form['global']['status'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable style stripper'),
+    '#description' => t('Check if style stripper should be enabled. Remember also to enable it on theme level.'),
+    '#default_value' => variable_get('stylestripper_enabled', 0),
+  );
+  $form['global']['enable_mode'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Checked CSS files are disabled'),
+    '#description' => t('The default mode of style stripper is that checked files are enabled. If this field is checked, then will the functionality be reversed, this means that checked files are disabled.'),
+    '#default_value' => variable_get('stylestripper_enable_mode', 0),
+  );
+  $form['global']['skip_modules'] = array(
+    '#type' => 'textarea',
+    '#title' => t("Modules that not should be indexed."),
+    '#description' => t('Write the module names that should not be indexed. Enter one module per line.'),
+    '#default_value' => variable_get('stylestripper_skip_modules', ''),
+  );  
+  $form['global']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save settings'),
+  );
+  return $form;
+}
+
+/**
+ * Process the global settings form
+ *
+ * @param array $form
+ * @param array $form_state
+ */
+function _stylestripper_admin_global_settings_form_submit($form, &$form_state) {
+  variable_set('stylestripper_enabled', $form_state['values']['status']);
+  variable_set('stylestripper_enable_mode', $form_state['values']['enable_mode']);
+  variable_set('stylestripper_skip_modules', $form_state['values']['skip_modules']);
+
+  // Setting OK message
+  drupal_set_message(t('Global settings are now saved!'));
+  
+  return '';
+}
+
+/**
+ * Update CSS file index form
+ *
+ * @return array
+ */
+function _stylestripper_admin_search_form() {
+ $count = db_result(db_query("SELECT COUNT(fid) FROM {stylestripper}"));
+ $form['search'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Update CSS file index'),
+    '#description' => t('!count CSS files is in the index. Search modules for new CSS files.', array('!count' => $count)),
+  );
+  $form['search']['search'] = array(
+    '#type' => 'submit',
+    '#value' => t('Update CSS file index'),
+  );
+  return $form;
+}
+
+/**
+ * Process the update index form and scannes the module folders for CSS files.
+ *
+ * @param array $form
+ * @param array $form_state
+ */
+function _stylestripper_admin_search_form_submit($form, &$form_state) {
+  global $base_path;
+  $skip_modules = explode("\n", variable_get('stylestripper_skip_modules', ''));
+  array_walk($skip_modules, '_stylestripper_trim_string');
+  
+  // Scanning module folders for CSS files and saving index in database
+  $result = db_query("SELECT * FROM {system} WHERE type = 'module' AND status = 1");
+  while($module = db_fetch_object($result)) {
+    if (!in_array($module->name, $skip_modules)) {
+      $module_path = pathinfo($module->filename, PATHINFO_DIRNAME);      
+      $css_files = file_scan_directory($module_path, '\.css$', array('.', '..', '.svn',  'CVS'));
+      foreach((array)$css_files as $key => $file) {
+        $fid = db_result(db_query("SELECT fid FROM {stylestripper} WHERE module_name = '%s' AND css_filename = '%s'", $module->name, $file->filename));
+        if (is_numeric($fid)) {
+          db_query("UPDATE {stylestripper} SET updated = 1 WHERE fid = %d", $fid);
+        }
+        else {
+          db_query("INSERT INTO {stylestripper} (module_name, css_filename, updated) VALUES ('%s', '%s', 1)", $module->name, $file->filename);  
+        }
+      }
+    }
+  }
+  
+  // Cleaning up old file records
+  $result = db_query("SELECT fid FROM {stylestripper} WHERE updated = 0");
+  while($fid = db_result($result)) {
+    db_query("DELETE FROM {stylestripper_settings} WHERE fid = %d", $fid);
+    db_query("DELETE FROM {stylestripper} WHERE fid = %d", $fid);
+  }
+  db_query("UPDATE {stylestripper} SET updated = 0");  
+
+  // Setting OK message
+  drupal_set_message(t('CSS file index updated!'));
+  
+  return '';
+}
+
+/**
+ * Trim string used together with array_walk.
+ *
+ * @param string $foo
+ */
+function _stylestripper_trim_string(&$foo) { 
+  $foo = trim($foo); 
+}
+
+/**
+* Theme settings form
+* 
+* @param array $form_state
+* @param string $theme
+* @return array
+*/
+function stylestripper_admin_theme_settings($form_state = array(), $theme) {
+  // General settings for this theme
+  $form['theme'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Theme settings'),
+  );
+  $form['theme']['status'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable style stripper for this theme'),
+    '#description' => t('Check if style stripper should be enabled for this theme. Remember also to enable it under global settings.'),
+    '#default_value' => variable_get('stylestripper_'.$theme.'_enabled', 0),
+  ); 
+  
+  // Creating fields for each CSS file
+  $result = db_query("
+                      SELECT 
+                        s.*, 
+                        ss.status
+                      FROM 
+                        {stylestripper} s 
+                        LEFT JOIN {stylestripper_settings} ss ON s.fid = ss.fid AND ss.theme = '%s'
+                      ORDER BY
+                        s.module_name,
+                        s.css_filename
+                      ", $theme);
+  $files = array();
+  $files_status = array();
+  while($row = db_fetch_object($result)) {
+    $files[$row->fid] = '';
+    if ($row->status == 1) {
+      $files_status[$row->fid] = $row->status;
+    }
+    $form['module_name'][$row->fid] = array('#value' => $row->module_name);
+    $form['css_filename'][$row->fid] =  array('#value' => $row->css_filename);
+  }
+  $form['files'] = array('#type' => 'checkboxes', '#options' => $files, '#value' => $files_status);
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Save settings'));
+  return $form;
+}
+
+/**
+ * Theming of theme settings page
+ *
+ * @ingroup themeable
+ */
+function theme_stylestripper_admin_theme_settings($form) {
+  $select_header = theme('table_select_header_cell');
+  $header = array($select_header, t('Module'), t('CSS file'));
+  $output = drupal_render($form['theme']);
+
+  foreach (element_children($form['module_name']) as $key) {
+    $row = array();
+    $row[] = drupal_render($form['files'][$key]);
+    $row[] = drupal_render($form['module_name'][$key]);
+    $row[] = drupal_render($form['css_filename'][$key]);
+    $rows[] = $row;
+  }
+
+  $output .= theme('table', $header, $rows);
+  $output .= drupal_render($form);
+
+  return $output;
+}
+
+/**
+* Saving theme settings
+* 
+* @param array $form
+* @param array $form_state
+* @return string
+*/
+function stylestripper_admin_theme_settings_submit($form, &$form_state) {
+  $theme_name = (arg(1) == 'themes') ? arg(3) : arg(4);
+  $theme = db_result(db_query("SELECT name FROM {system} WHERE type = 'theme' AND name = '%s' AND status = 1", $theme_name));
+  if (empty($theme)) {
+    drupal_set_message(t('Theme %theme_name does not exist!', array('!theme_name' => $theme_name)), 'error');
+    return '';
+  }
+  
+  // Saving settings
+  variable_set('stylestripper_'.$theme.'_enabled', $form_state['values']['status']);
+  
+  // Deleting old records
+  db_query("DELETE FROM {stylestripper_settings} WHERE theme = '%s'", $theme);
+  
+  // Saving new records
+  foreach((array)$form_state['values']['files'] as $fid => $status) {
+    db_query("INSERT INTO {stylestripper_settings} (fid, theme, status) VALUES (%d, '%s', %d)", $fid, $theme, ($status > 0) ? 1 : 0);
+  }
+  
+  drupal_set_message(t('The style stripper settings for %theme_name is now updated!', array('%theme_name' => $theme)));
+  return;  
+}
+
+/**
+* Loading settings for a specific theme
+* If no theme is given as argument, we will instead load the settings for the active theme
+* 
+* @param string $theme
+* @return mixed
+*/
+function stylestripper_load_settings($theme = NULL) {
+  static $settings;
+  
+  // If theme was null, then we use the active theme.
+  if (is_null($theme)) {
+    global $theme;
+  }
+  
+  // If $theme is empty we return FALSE
+  if (empty($theme)) {
+    return FALSE;
+  }
+  
+  // If settings was not already loaded for this theme, then we load them.
+  if (!isset($settings[$theme])) {
+    $result = db_query("
+                        SELECT 
+                          s.css_filename,
+                          ss.status
+                        FROM 
+                          {stylestripper} s 
+                          INNER JOIN {stylestripper_settings} ss ON s.fid = ss.fid AND ss.theme = '%s'
+                        ", $theme);
+    while($row = db_fetch_object($result)) {
+      $settings[$theme][$row->css_filename] = $row->status ? TRUE : FALSE;
+    }
+  }
+  
+  // Return array with settings or returning FALSE
+  if (isset($settings[$theme])) {
+    return $settings[$theme];
+  } 
+  else {
+    return FALSE;  
+  }
+}
+
+/**
+ * Implementation of hook_preprocess_page()
+ */
+function stylestripper_preprocess_page(&$variables) {
+  global $theme;
+  
+  // Checking if style stripper is enabled
+  if (variable_get('stylestripper_enabled', 0) && variable_get('stylestripper_'.$theme.'_enabled', 0)) {  
+    // Loading settings
+    $settings = stylestripper_load_settings();
+    
+    // Checking if settings is an array
+    if (is_array($settings)) {
+      // Getting already added CSS files
+      $CSS = drupal_add_CSS();
+          
+      // Looping through added CSS files and unsetting files that we dont want to use
+      foreach((array)$CSS as $media => $types) {
+        foreach ((array)$types as $type => $files) {
+          if ($type == 'module') {
+            foreach((array)$files as $file => $preprocess) {
+              if (isset($settings[$file])) {
+                if ((!variable_get('stylestripper_enable_mode', 0) && !$settings[$file]) || (variable_get('stylestripper_enable_mode', 0) && $settings[$file])) {
+                  unset($CSS[$media][$type][$file]);                  
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      // Saving the rest of the CSS files in $variables.
+      $variables['styles'] = drupal_get_CSS($CSS);
+    }
+  }
+}
+
+/**
+ * Menu item access callback - only admin theme or enabled themes can be accessed.
+ */
+function _stylestripper_admin_access($theme) {
+  return user_access('administer stylestrippper') && ($theme->status || $theme->name == variable_get('admin_theme', '0'));
+}

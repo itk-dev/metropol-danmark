@@ -1,0 +1,38 @@
+<?php
+
+/**
+ * Implementation of hook_install
+ */
+function input_format_permissions_install() {
+  $role_perms = array();
+
+  // Get current permissions
+  $perm_result = db_query('SELECT rid, perm FROM {permission}');
+  while ($row = db_fetch_array($perm_result)) {
+    $role_perms[$row['rid']] = $row['perm'];
+  } 
+
+
+  $filter_result = db_query('SELECT name, roles FROM {filter_formats}');
+  while ($row = db_fetch_array($filter_result)) {
+    $filter = check_plain(strtolower($row['name']));
+    $roles = array_filter(explode(',', $row['roles']));
+    foreach ($roles as $role) {
+      $role_perms[$role] .= ', ' . input_format_permissions_install_formatname_to_permission($filter);
+    }
+  }
+
+  if (count($role_perms) == 0) { return; }
+
+  foreach ($role_perms as $rid => $perm) {
+    db_query('UPDATE {permission} SET perm = "%s" WHERE rid = "%d"', 
+      $perm, $rid);
+  }
+}
+
+/**
+ * This is needed so that default permissions can be set correctly
+ */
+function input_format_permissions_install_formatname_to_permission($name) {
+  return 'use the ' . check_plain(strtolower($name)) . ' input format'; 
+}

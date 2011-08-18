@@ -1,0 +1,13 @@
+/* CSS Document */
+#dhtmltooltip{
+position: absolute;
+width: 100px;
+height: 21px;
+padding: 15px 15px 2px 15px;
+background-image:url("../img/tooltip.gif");
+visibility: hidden;
+z-index: 100;
+/* filter: progid:DXImageTransform.Microsoft.Shadow(color=lightgray,direction=60); */
+}
+
+

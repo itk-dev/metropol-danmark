@@ -1,0 +1,13 @@
+<?php
+
+function sitedir_migrate_profile_picture_sitedir_query() {
+  return 'User Profile Pictures';
+}
+
+function sitedir_migrate_profile_picture_sitedir_update() {
+  watchdog('Sitedir Migrate', 'Running the Profile Picture migration');
+  $args = func_get_args();
+  $from = $args[0];
+  $to = $args[1];
+  db_query("UPDATE {users} SET picture = replace(picture,'%s','%s')", $from, $to);
+}

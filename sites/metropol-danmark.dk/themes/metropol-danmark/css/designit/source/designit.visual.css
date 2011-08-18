@@ -1,0 +1,93 @@
+/*
+_______________________________
+VISUAL */
+
+blockquote
+{
+	color:#666;
+}
+
+abbr[title],acronym[title],dfn[title]
+{
+	border-bottom:1px solid #ccc;
+}
+
+ins,dfn
+{
+	border-bottom-color:#666;
+}
+
+del
+{
+	color:#666;
+}
+
+fieldset
+{
+	border-color:#ccc;
+}
+
+textarea,input[type='text'],input[type='password'],select
+{
+	border:1px solid #ccc;
+	background:#fff;
+}
+
+fieldset
+{
+	border:1px solid #ccc;
+}
+
+textarea:hover,input[type='text']:hover,input[type='password']:hover,select:hover
+{
+	border-color:#aaa;
+}
+
+textarea:focus,input[type='text']:focus,input[type='password']:focus,select:focus
+{
+	outline:2px solid #e4e4e4;
+	border-color:#888;
+}
+
+.inner hr
+{
+	background:#aaa;
+	color:#aaa;
+}
+
+.inner table
+{
+	border-top:1px solid #ccc;
+	border-left:1px solid #ccc;
+}
+
+.inner th,.inner td
+{
+	border-bottom:1px solid #ddd;
+	border-right:1px solid #ccc;
+}
+
+.inner th,.inner td
+{
+	padding:.8em;
+}
+
+a:link
+{
+	color:#36c;
+}
+
+a:visited
+{
+	color:#99c;
+}
+
+a:hover,code,pre
+{
+	color:#c33;
+}
+
+a:active,.a:focus
+{
+	color:#000;
+}

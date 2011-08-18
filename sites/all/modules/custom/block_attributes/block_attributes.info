@@ -1,0 +1,4 @@
+; $Id$
+name = Block Attributes
+description = Allows assigning CSS id and classes to blocks.
+core = 6.x

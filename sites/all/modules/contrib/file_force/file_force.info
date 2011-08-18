@@ -1,0 +1,11 @@
+; $Id: file_force.info,v 1.2 2010/08/04 09:09:47 arski Exp $
+name = File Force
+description = Force your visitors to download requested files.
+package = "Other"
+
+; Information added by drupal.org packaging script on 2010-12-20
+version = "6.x-2.3"
+core = "6.x"
+project = "file_force"
+datestamp = "1292869937"
+

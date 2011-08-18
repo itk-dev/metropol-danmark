@@ -1,0 +1,33 @@
+div.fivestar-widget-static .star {
+  width: 34px;
+  height: 34px;
+  background: url(star.png) no-repeat 0 0;
+}
+
+div.fivestar-widget-static .star span.on {
+  background: url(star.png) no-repeat 0 -68px;
+}
+
+div.fivestar-widget-static .star span.off {
+  background: url(star.png) no-repeat 0 0;
+}
+
+/* Javascript Star Version */
+div.fivestar-widget .cancel, div.fivestar-widget .star {
+  width: 34px;
+  height: 34px;
+}
+div.fivestar-widget .cancel, div.fivestar-widget .cancel a {
+  display:none;
+}
+
+div.fivestar-widget .star, div.fivestar-widget .star a {
+  background: url(star.png) no-repeat 0 0;
+}
+
+div.fivestar-widget div.on a {
+  background-position: 0 -34px;
+}
+div.fivestar-widget div.hover a, div.rating div a:hover {
+  background-position: 0 -68px;
+}

@@ -1,0 +1,12 @@
+name = Menu position
+description = Customize menu position of nodes depending on their content type, associated terms and others conditions.
+
+core = 6.x
+dependencies[] = menu
+
+; Information added by drupal.org packaging script on 2010-12-17
+version = "6.x-1.0-beta1"
+core = "6.x"
+project = "menu_position"
+datestamp = "1292596956"
+

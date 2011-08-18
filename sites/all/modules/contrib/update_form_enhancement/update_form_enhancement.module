@@ -1,0 +1,44 @@
+<?php
+// $Id: update_form_enhancement.module,v 1.1.2.3 2009/02/20 16:48:35 markuspetrux Exp $
+
+/**
+ * @file
+ * Enhances update.php user interface by separating modules that are up to date
+ * from those that are not.
+ */
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function update_form_enhancement_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id == 'update_script_selection_form' && is_array($form['start'])) {
+    // Code moved to a separate script so that we don't eat much memory
+    // during normal operation of the site.
+    module_load_include('inc', 'update_form_enhancement');
+    _update_form_enhancement_form_alter($form, $form_state, $form_id);
+  }
+}
+
+/**
+ * Implementation of hook_boot().
+ *
+ * This function is used to undo the changes made by our own implementation of
+ * hook_form_alter() before the POST data is processed by the next step in
+ * update.php script. We could do this in several places, but hook_boot() looks
+ * like a good enough place to do so.
+ * Note that FormAPI is not invoked to process the form. Rather, the $_POST
+ * array is directly accessed by function update_batch() in update.php where
+ * it is expected to have the same structure it was initially built with.
+ */
+function update_form_enhancement_boot() {
+  if (isset($_POST['form_id']) && $_POST['form_id'] === 'update_script_selection_form' && isset($_POST['start'])) {
+    if (!empty($_POST['start']['changed'])) {
+      $_POST['start'] += $_POST['start']['changed'];
+    }
+    if (!empty($_POST['start']['unchanged'])) {
+      $_POST['start'] += $_POST['start']['unchanged'];
+    }
+    unset($_POST['start']['changed']);
+    unset($_POST['start']['unchanged']);
+  }
+}

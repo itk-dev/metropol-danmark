@@ -1,0 +1,107 @@
+<?php
+// $Id: danishstemmer.module,v 1.2 2008/11/25 06:03:18 frjo Exp $
+
+/**
+ * @file
+ * "Improve danish language searching by simplifying related words to their root (verbs, plurals, ...).
+ * Algorithm based on http://snowball.tartarus.org/algorithms/danish/stemmer.html.
+ */
+
+/**
+ * Implementation of hook_search_preprocess.
+ */
+function danishstemmer_search_preprocess($text) {
+  global $language;  
+  if ($language->language != 'da') {
+    return $text;
+  }
+  
+  // Split words from noise and remove apostrophes
+  $words = preg_split('/([^a-zA-ZæøåÆØÅ\']+)/u', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
+
+  // Process each word
+  $odd = true;
+  foreach ($words as $k => $word) {
+    if ($odd) {
+      $words[$k] = danishstemmer_stem($word);
+    }
+    $odd = !$odd;
+  }
+
+  // Put it all back together
+  return implode('', $words);
+}
+
+/**
+ * Stem a danish word.
+ */
+function danishstemmer_stem($word) {
+  // Lowercase
+  $word = drupal_strtolower($word);
+
+  /* R1 is the region after the first non-vowel following a vowel, or is the
+     null region at the end of the word if there is no such non-vowel. */
+  if (preg_match('/[aeiouyæøå][^aeiouyæøå]/u', $word, $matches, PREG_OFFSET_CAPTURE)) {
+    $r1 = $matches[0][1] + 2;
+  }
+
+  // Steps 1-4: suffix removal
+  $word = danishstemmer_step1($word, $r1);
+  $word = danishstemmer_step2($word, $r1);
+  $word = danishstemmer_step3($word, $r1);
+  $word = danishstemmer_step4($word, $r1);
+
+  return $word;
+}
+
+/**
+ * Step 1
+ */
+function danishstemmer_step1($word, $r1) {
+  // Search for the longest among the following suffixes in R1, and perform the action indicated.
+  if ($r1) {
+    $word = preg_replace(array_reverse(array('/hed$/', '/ethed$/', '/ered$/', '/e$/', '/erede$/', '/ende$/', '/erende$/', '/ene$/', '/erne$/', '/ere$/', '/en$/', '/heden$/', '/eren$/', '/er$/', '/heder$/', '/erer$/', '/heds$/', '/es$/', '/endes$/', '/erendes$/', '/enes$/', '/ernes$/', '/eres$/', '/ens$/', '/hedens$/', '/erens$/', '/ers$/', '/ets$/', '/erets$/', '/et$/', '/eret$/')), '', $word, 1);
+  }
+
+  // Delete 's' if preceded by a valid s-ending
+  $word = preg_replace('/([abcdfghjklmnoprtvyz{ao}])s$/', '\\1', $word);
+
+  return $word;
+}
+
+/**
+ * Step 2
+ */
+function danishstemmer_step2($word, $r1) {
+  // Search for one of the following suffixes in R1, and if found delete the last letter.
+  if ($r1) {
+    $word = preg_match('/(gd|dt|gt|kt)$/', $word) ? substr($word, 0, -1) : $word;
+  }
+
+  return $word;
+}
+
+/**
+ * Step 3
+ */
+function danishstemmer_step3($word, $r1) {
+  // Search for the longest among the following suffixes in R1, and perform the action indicated.
+  if ($r1) {
+    $word = preg_replace('/(ig|lig|elig|els)$/', '', $word);
+    $word = preg_replace('/løst$/', 'løs', $word);
+  }
+
+  return $word;
+}
+
+/**
+ * Step 4
+ */
+function danishstemmer_step4($word, $r1) {
+  // Search for one of the following suffixes in R1, and if found delete the last letter.
+  if ($r1) {
+    $word = preg_match('/(bb|cc|dd|ff|gg|hh|jj|kk|ll|mm|nn|pp|qq|rr|ss|tt|vv|xx|zz)$/', $word) ? substr($word, 0, -1) : $word;
+  }
+  
+  return $word;
+}

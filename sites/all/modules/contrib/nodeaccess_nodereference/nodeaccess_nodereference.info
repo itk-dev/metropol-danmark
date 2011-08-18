@@ -1,0 +1,10 @@
+name = Node access node reference
+description = Provides per node access control with CCK Node Reference fields.
+core = 6.x
+dependencies[] = nodereference
+; Information added by drupal.org packaging script on 2011-03-11
+version = "6.x-1.10"
+core = "6.x"
+project = "nodeaccess_nodereference"
+datestamp = "1299813369"
+

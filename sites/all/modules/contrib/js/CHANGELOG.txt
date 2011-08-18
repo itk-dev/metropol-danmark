@@ -1,0 +1,32 @@
+
+JavaScript callback handler x.x-x.x, xxxx-xx-xx
+-----------------------------------------------
+
+
+JavaScript callback handler 6.x-2.x, xxxx-xx-xx
+-----------------------------------------------
+Complete rewrite of JS callback handler.  Added a requirement for hook_js() in
+  third-party modules, which must return an info array with allowed callbacks.
+  Refer to the README for details.  Example:
+  <?php
+  function example_js() {
+    return array(
+      'somefunction' => array(
+        'callback' => 'example_somefunction',
+        'includes' => array('theme', 'unicode'),
+        'dependencies' => array('locale', 'filter', 'user'),
+      ),
+    );
+  }
+  ?>
+Avoid devel.module to get in the way.
+Avoid caching of JS callback output.
+Moved js_requirements() into js.install.
+Fixed lines do not wrap at 80 chars in README.txt.
+
+
+JavaScript callback handler 5.x-1.0, 2008-04-26
+-----------------------------------------------
+Initial release of JavaScript callback handler.
+
+

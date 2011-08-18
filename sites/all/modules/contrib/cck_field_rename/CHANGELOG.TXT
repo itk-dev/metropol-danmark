@@ -1,0 +1,58 @@
+6.x-1.x-dev   : First Development version for 6.x-1.x-dev
+
+6.x-1.0-alpha1: New: support Node Reference
+                Bug fix: checking wrong column name for filefield
+                
+6.x-1.0-alpha2: New: support Date
+                Bug fix: decimal convert to right specification rather than decimal(10,2)
+								Bug fix: better handling field specification/definition
+								Bug fix: do not run db_column_exits() so we can see error message for debugging
+								
+6.x-1.0-alpha3: Bug fix: warning of "Sorry, multigroup will be support on next release"
+
+6.x-1.0-alpha4: New: support multigroup
+                Bug fix: add warning "Please make a DATABASE BACKUP first for preventive!"
+								Bug fix: add info "Clear chache if manage fields not run properly"
+								
+6.x-1.0-alpha5: Bug fix: multigroup should change field name then table name
+                Bug fix: run "Clear cache data" manually
+								Bug fix: better warning for Backup Database first
+								
+6.x-1.0-beta1 : Bug fix: check if field-name exists
+
+6.x-1.0-beta2 : Bug fix: $field_source to $field_source.'_value'
+
+6.x-1.0-beta3 : Bug fix: formatted text-field contains format column name (reported by mki)
+                New: support computed field
+								
+6.x-1.0-beta4 : New: support datetime and datestamp
+
+6.x-1.0-beta5 : New: support new field: link
+                New: support new field: content_taxonomy
+                Bug fix: check if target name already exists
+
+6.x-1.0-beta6 : Bug fix: max field-name 32 chars (http://drupal.org/node/1085484)
+                Bug fix: fix several issue with Drupal Coding (http://drupal.org/node/1085688)
+                
+6.x-1.0-beta7 : Reupload 6.x-1.0-beta6 because contains 6.x-1.x-dev files! 
+
+6.x-1.0-beta8 : Upload to "6.x-1.x" branch rather than "master" branch
+
+6.x-1.0-beta9 : New: support new field: phone (http://drupal.org/node/1048926)
+                Bug fix: Use form API and remove global register
+                Bug fix: use all columns definitions
+                
+6.x-1.0-beta10 : New: select field-name without "field_" (thus easy to find a field name)
+
+6.x-1.0-beta11 : New: support new field: userreference (http://drupal.org/node/1080834)
+                 Bug fix: support "To Date" of date-field
+                 
+6.x-1.0-beta12 : Bug fix: fix error on CCK field-image
+
+6.x-1.0-beta13 : Bug fix: fix if using existing field
+
+6.x-1.0-beta14 : New: support new field: email
+                 Bug fix: format of texfield, thanks to eneko1907 (http://drupal.org/user/422339)
+                 
+6.x-1.0: Stable version for D6
+                 

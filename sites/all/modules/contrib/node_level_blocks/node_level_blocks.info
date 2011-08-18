@@ -1,0 +1,13 @@
+; $Id: node_level_blocks.info,v 1.1 2010/05/19 19:54:26 skilip Exp $
+name = "Node-level Blocks"
+description = "Allows node editors to assign blocks to regions on a node base."
+dependencies[] = block
+dependencies[] = node
+core = 6.x
+
+; Information added by drupal.org packaging script on 2010-05-19
+version = "6.x-1.0-beta1"
+core = "6.x"
+project = "node_level_blocks"
+datestamp = "1274300708"
+

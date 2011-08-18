@@ -1,0 +1,157 @@
+<?php
+// $Id: csstidy.module,v 1.33.2.8 2010/12/12 06:32:20 philbar Exp $
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function csstidy_form_alter(&$form, $form_state, $form_id) {
+    if ($form_id == 'system_performance_settings') {
+        $form['bandwidth_optimizations']['csstidy_readable'] = array('#type' => 'checkbox',
+        '#title' => t('CSSTidy: Keep CSS Readable'),
+        '#description' => t('Enabling this option will add linebreaks to the CSS to make it easy to read while compressing it as much as possible.'),
+        '#default_value' => variable_get('csstidy_readable', FALSE),
+        '#weight' => $form['bandwidth_optimizations']['preprocess_css']['#weight'] + .1,
+        );
+    }
+}
+
+/**
+ * Implementation of hook_theme_registry_alter().
+ *
+ * Make csstidy's page preprocess function run *after* everything else's,
+ * so that a theme can't call drupal_get_js() and mess everything up.
+ *
+ * @param &$theme_registry
+ *   The entire cache of theme registry information, post-processing.
+ */
+function csstidy_theme_registry_alter(&$theme_registry) {
+  if (isset($theme_registry['page'])) {
+    // If csstidy's preprocess function is there already, remove it.
+    if ($key = array_search('csstidy_preprocess_page', $theme_registry['page']['preprocess functions'])) {
+      unset($theme_registry['page']['preprocess functions'][$key]);
+    }
+    // Now tack it on at the end so it runs after everything else.
+    $theme_registry['page']['preprocess functions'][] = 'csstidy_preprocess_page';
+    // Move parallel's preprocess function after ours.
+    if (($key = array_search('parallel_preprocess_page', $theme_registry['page']['preprocess functions'])) !== FALSE) {
+      unset($theme_registry['page']['preprocess functions'][$key]);
+      $theme_registry['page']['preprocess functions'][] = 'parallel_preprocess_page';
+    }
+  }
+}
+
+/**
+ * Implementation of hook_preprocess_hook().
+ *
+ * Check to make sure CSS optimization is turned on before running CSSTidy.
+ */
+function csstidy_preprocess_page(&$variables) {
+    if (!empty($variables['styles']) && variable_get('preprocess_css', 0)) {
+        $variables['styles'] = _csstidy_process($variables['styles']);
+    }
+}
+
+/**
+ * Helper function to run CSSTidy.
+ */
+function _csstidy_process($styles) {
+    //Initialize CSSTidy
+    include_once('parse.inc');
+    $css = new csstidy();
+    $css->load_template('highest_compression');
+
+    //Optionally make CSS Readable
+    if (variable_get('csstidy_readable', TRUE)) {
+        $css->load_template('default');
+    }
+
+    // Discover Aggregated CSS and Optimize Using CSSTidy
+    $path_to_files_directory = base_path() . file_directory_path();
+    $pattern = '/href=".*?' . preg_quote($path_to_files_directory, '/') . '(.*?)"/';
+    if (preg_match_all($pattern, $styles, $matches) > 0) {
+        foreach ($matches[1] as $aggregated_file_name) {
+            $csstidy_file_name = str_replace('.css', '_tidy.css', $aggregated_file_name);
+            $csstidy_file_path = file_directory_path() . $csstidy_file_name;
+
+            // Save the processed CSS file if it doesn't exist yet
+            if (!file_exists($csstidy_file_path)) {
+                _csstidy_collect(null, TRUE);
+                $contents = file_get_contents(file_directory_path() . $aggregated_file_name);
+
+                // Optimize Aggregated CSS with CSSTidy
+                $css->parse($contents);
+                $contents = $css->print->plain();
+
+                // Add all size results together to calculate ratio later
+                $input_size = $css->print->size(input) + $input_size;
+                $output_size = $css->print->size(output) + $output_size;
+
+                // Save the contents to the new CSS file
+                file_save_data($contents, $csstidy_file_path, FILE_EXISTS_REPLACE);
+            }
+
+            // Replace the aggregated file with the processed CSS file.
+            if (!empty($contents)) {
+              $styles = str_replace($aggregated_file_name, $csstidy_file_name, $styles);
+            }
+        }
+
+        // Calculate ratio and save it
+        if ($output_size != 0) {
+          $ratio =  round(($input_size - $output_size) / $output_size, 3) * 100;
+          variable_set('csstidy_ratio', $ratio);
+        }
+    }
+
+    return $styles;
+}
+
+/**
+ * Display compression results in Status Report.
+ * Implementation of hook_requirements().
+ */
+function csstidy_requirements($phase) {
+  $csstidy_ratio = variable_get('csstidy_ratio', 'no-data');
+  $requirements = array();
+
+  if ($csstidy_ratio > 0) {
+    $requirements['csstidy_compression'] = array(
+      'title' => t('CSSTidy Compression'),
+      'value' => $csstidy_ratio . '%',
+      'severity' => REQUIREMENT_OK,
+    );
+  }
+  elseif ($csstidy_ratio == 'no-data') {
+    $requirements['csstidy_library'] = array(
+      'title' => t('CSSTidy Compression'),
+      'value' => 'No Data',
+      'severity' => REQUIREMENT_INFO,
+      'description' => t('Try clearing your cache.'),
+    );
+  }
+  else {
+    $requirements['csstidy_library'] = array(
+      'title' => t('CSSTidy Compression'),
+      'value' => $csstidy_ratio . '%',
+      'severity' => REQUIREMENT_ERROR,
+      'description' => t('CSSTidy could not compress the stylesheets, please disable the module.'),
+    );
+  }
+
+  return $requirements;
+}
+
+/**
+ * Helper function to save processed CSS.
+ */
+function _csstidy_collect($matches = NULL, $reset = FALSE) {
+    static $data = array();
+    if ($reset) {
+        $data = array();
+    }
+    if (is_null($matches)) {
+        return $data;
+    }
+
+    return $data;
+}

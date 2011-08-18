@@ -1,0 +1,16 @@
+<?php
+// $Id: common_fonts.install,v 1.1.2.1 2011/01/02 21:33:04 sreynen Exp $
+
+/**
+ * @file
+ * Removes fonts on disable.
+ */
+
+/**
+ * Implements hook_disable().
+ */
+function common_fonts_disable() {
+
+  fontyourface_provider_disable('common_fonts');
+
+} // common_fonts_disable

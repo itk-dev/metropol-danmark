@@ -1,0 +1,125 @@
+<?php
+/*
+ * @file imagecache_external.module
+ * Allows imagecache to operate on external images
+ * @copyright Copyright(c) 2010 Lee Rowlands
+ * @license GPL v2 http://www.fsf.org/licensing/licenses/gpl.html 
+ * @author Lee Rowlands contact at rowlandsgroup dot com
+ * 
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function imagecache_external_menu() { 
+  // This is the minimum information you can provide for a menu item.
+  $items['external'] = array(
+    'title' => 'External image',
+    'page callback' => 'imagecache_external_image',
+    'access arguments' => array('View external images'),
+    'type' => MENU_CALLBACK
+  );
+  // more complex menu item
+  $items['admin/settings/imagecache_external'] = array(
+    'title' => 'Imagecache External',
+    'description' => 'Configure imagecache external',
+    'file' => 'imagecache_external.admin.inc',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('imagecache_external_admin_form'),
+    'access arguments' => array('Administer imagecache external'),
+    'type' => MENU_NORMAL_ITEM, 
+  );
+  $items['admin/settings/imagecache_external/settings'] = array(
+    'title' => 'Settings',
+    'description' => 'Configure imagecache external',
+    'file' => 'imagecache_external.admin.inc',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('imagecache_external_admin_form'),
+    'access arguments' => array('Administer imagecache external'),
+    'type' => MENU_DEFAULT_LOCAL_TASK, 
+  );
+  $items['admin/settings/imagecache_external/flush'] = array(
+    'title' => 'Flush external images',
+    'description' => 'Flush external images',
+    'file' => 'imagecache_external.admin.inc',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('imagecache_external_flush_form'),
+    'access arguments' => array('Administer imagecache external'),
+    'type' => MENU_LOCAL_TASK, 
+  );
+
+  return $items;
+}
+
+
+/**
+ * Implementation of hook_perm().
+ */
+function imagecache_external_perm() {
+  return array('View external images', 'Fetch external images', 'Administer imagecache external', 'Bypass black/white list');
+}
+
+/**
+ * Menu callback does the heavy lifting
+*/
+function imagecache_external_image() {
+  $args = func_get_args();
+  $preset = array_shift($args);
+  // pop the http:
+  array_shift($args);
+  $url = 'http://'. implode('/', $args);
+  $host = $args[0]; //the host comes first
+  //now we test it against the whitelist/blacklist
+  if (!$url) {
+    return drupal_not_found();
+  }
+  $list = preg_split('/\s+/', variable_get('imagecache_external_hosts', ''));
+
+  // Check if the list is set as a blacklist and the host is in the list or if
+  // the list is set as a whitelist and the host is not found in the list.
+  // Note that this is retrospective, ie a previously downloaded image can be blocked
+  if (((variable_get('imagecache_external_option', 'black') == 'black' &&
+       in_array($host, $list)) ||
+      (variable_get('imagecache_external_option', 'black') == 'white' &&
+       !in_array($host, $list))) &&
+      !user_access('Bypass black/white list')) {
+    //if we are unsuccessful then log a message in watchdog
+    watchdog('imagecache_external', 'The image '. $url .' could not be retrieved, it did not meet the black/white list requirements.');
+    return drupal_access_denied();
+  }
+  $dir = file_create_path('externals');
+  if (!file_check_directory($dir)) {
+    mkdir($dir, 0775, FALSE);
+  }
+  $hash = md5($url);
+  $cachepath = file_create_path('externals/'. $hash);
+  if (!is_file($cachepath)) {
+    if (!user_access('Fetch external images')) {
+      watchdog('imagecache_external', 'The image '. $url .' could not be retrieved, the user does not have permission to fetch external images.');
+      return drupal_access_denied();
+    }
+    $result = drupal_http_request($url);
+    $code   = floor($result->code / 100) * 100;
+    $types  = array('image/jpeg', 'image/png', 'image/gif');
+    if ($result->data && $code != 400 && $code != 500 && in_array($result->Content-Type, $types)) {
+      $src = file_save_data($result->data, $cachepath);
+      $transfer = TRUE;
+    }
+    else  {
+      //if we are unsuccessful then log a message in watchdog
+      watchdog('imagecache_external', 'The image '. $url .' could not be retrieved');
+      return drupal_not_found();
+    }
+  }
+  else  {
+    $transfer = TRUE;
+  }
+  if ($transfer) {
+    $args = explode('/', file_directory_path());
+    array_push($args, 'externals', $hash);
+    array_unshift($args, $preset);
+    return call_user_func_array('imagecache_cache', $args);
+  }
+}
+
+

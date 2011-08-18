@@ -1,0 +1,87 @@
+<?php
+// $Id: simplenews_multisignup.module,v 1.3 2009/06/17 22:08:33 zoo33 Exp $
+
+/**
+ * Implementation of hook_theme().
+ */
+function simplenews_multisignup_theme() {
+  return array(
+    'simplenews_multisignup_block' => array('rendered_form' => '', 'help' => '', )
+  );
+}
+
+
+/**
+ * Implementation of hook_block().
+ */
+function simplenews_multisignup_block($op = 'list', $delta = 0, $edit = array()) {
+  if ($op == 'list') {
+    $blocks = array(
+      0 => array('info' => t('Newsletter: all newsletters')),
+    );
+    return $blocks;
+  }
+  else if ($op == 'configure' && $delta == 0) {
+    $form['simplenews_multisignup_help'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Help text'),
+      '#default_value' => variable_get('simplenews_multisignup_help', t('Select the newsletter(s) to which you want to subscribe or unsubscribe.')),
+      '#description' => t("Use this option to change the help message displayed above the form."),
+    );
+    return $form;
+  }
+  else if ($op == 'save' && $delta == 0) {
+    variable_set('simplenews_multisignup_help', $edit['simplenews_multisignup_help']);
+  }
+  else if ($op == 'view') {
+    switch ($delta) {
+      case 0:
+        $block = array('subject' => t('Our newsletters'),
+          'content' => _simplenews_multisignup_block(),
+        );
+        break;
+    }
+    return $block;
+  }
+}
+
+
+/**
+ * Build subscription block.
+ *
+ * @return string
+ */
+function _simplenews_multisignup_block() {
+  $help = variable_get('simplenews_multisignup_help', t('Select the newsletter(s) to which you want to subscribe or unsubscribe.'));
+  // The third argument makes it possible for hook_form_alter() to recognize this instance of the form.
+  module_load_include('inc', 'simplenews', 'simplenews.subscription');
+  $rendered_form = drupal_get_form('simplenews_subscription_manager_form', NULL, 'simplenews_multisignup');
+  return theme('simplenews_multisignup_block', $rendered_form, check_plain($help));
+}
+
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function simplenews_multisignup_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id == 'simplenews-subscription-manager-form') {
+    if (!empty($form['#parameters'][2]) && $form['#parameters'][2] == 'simplenews_multisignup') {
+      // Get rid of the fieldset to save screen space.
+      unset($form['subscriptions']['#type']);
+      // Prevent the form from redirecting to the front page.
+      $form['#redirect'] = FALSE;
+    }
+  }
+}
+
+
+/**
+ * Theme signup block.
+ *
+ * @param string $rendered_form
+ * @param string $help
+ * @return string
+ */
+function theme_simplenews_multisignup_block($rendered_form, $help) {
+  return '<div class="simplenews-multisignup-help">'. $help .'</div>'. $rendered_form;
+}

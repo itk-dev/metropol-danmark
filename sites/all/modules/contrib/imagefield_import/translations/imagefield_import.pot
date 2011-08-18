@@ -1,0 +1,481 @@
+# $Id: imagefield_import.pot,v 1.1.2.1 2010/05/18 08:01:09 wulff Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  imagefield_import.module,v 1.8.2.34 2010/05/18 07:53:51 wulff
+#  imagefield_import.info,v 1.2.4.4 2009/11/24 10:39:09 wulff
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2010-05-18 09:57+0200\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: imagefield_import.module:30
+msgid "Images will be imported to the %field field on the %type content type."
+msgstr ""
+
+#: imagefield_import.module:33
+msgid "A node will be created for each imported image."
+msgstr ""
+
+#: imagefield_import.module:36
+msgid "All imported images will be added to a single node."
+msgstr ""
+
+#: imagefield_import.module:40
+msgid "If any taxonomies are associated with the %type content type, you can use the form below to set taxonomy terms on all uploaded images."
+msgstr ""
+
+#: imagefield_import.module:42
+msgid "All non-filefield form widgets are rendered at the bottom of the form. Use them to set values on all imported nodes."
+msgstr ""
+
+#: imagefield_import.module:52
+msgid "In order to import images into an imagefield, you must first have a node type that has an imagefield associated with it. Configure this on the !url page"
+msgstr ""
+
+#: imagefield_import.module:52
+msgid "Content types"
+msgstr ""
+
+#: imagefield_import.module:132
+msgid "Import path"
+msgstr ""
+
+#: imagefield_import.module:135
+msgid "A file system path where files are stored before being imported. This directory must exist and be writable by Drupal. Paths with a leading slash (e.g. '/upload') are relative to the server's root directory while paths without a leading slash (e.g. 'upload') are relative to the Drupal root directory."
+msgstr ""
+
+#: imagefield_import.module:142
+msgid "Target field"
+msgstr ""
+
+#: imagefield_import.module:143
+msgid "Select the imagefield you want to import photos into. When you do the import, nodes of your selected type will be created and the selected field will be populated with the imported image."
+msgstr ""
+
+#: imagefield_import.module:151
+msgid "Mode"
+msgstr ""
+
+#: imagefield_import.module:153
+msgid "Import images to separate nodes"
+msgstr ""
+
+#: imagefield_import.module:154
+msgid "Import images to a single node"
+msgstr ""
+
+#: imagefield_import.module:157
+msgid "Choose import images to separate nodes if you want to create a node for each image you import. Choose import images to a single node to add all imported images to a single node which will be created during the import."
+msgstr ""
+
+#: imagefield_import.module:162
+msgid "Thumbnails"
+msgstr ""
+
+#: imagefield_import.module:168
+msgid "Show thumbnails"
+msgstr ""
+
+#: imagefield_import.module:169
+msgid "Show thumbnails on the import form. WARNING: This displays the original images scaled by the browser and will only work if the upload folder is placed below the Drupal root folder."
+msgstr ""
+
+#: imagefield_import.module:174
+msgid "Thumbnail width"
+msgstr ""
+
+#: imagefield_import.module:175
+msgid "Enter the width of the thumbnails in pixels."
+msgstr ""
+
+#: imagefield_import.module:182
+msgid "File handling"
+msgstr ""
+
+#: imagefield_import.module:188
+msgid "Ignore files"
+msgstr ""
+
+#: imagefield_import.module:189
+msgid "Ignore any files matching this regular expression. You must include the leading and trailing slash of the regular expression. Leave the field empty if you do not want to ignore any files."
+msgstr ""
+
+#: imagefield_import.module:195
+msgid "Delete files after import"
+msgstr ""
+
+#: imagefield_import.module:196
+msgid "Delete the images from the upload folder when they have been succesfully imported."
+msgstr ""
+
+#: imagefield_import.module:202
+msgid "Publishing options"
+msgstr ""
+
+#: imagefield_import.module:208
+msgid "Set node status during import"
+msgstr ""
+
+#: imagefield_import.module:209
+msgid "Mark each imported node as published/unpublished when they are imported. All imported nodes are published by default."
+msgstr ""
+
+#: imagefield_import.module:214
+msgid "Set default status to unpublished"
+msgstr ""
+
+#: imagefield_import.module:215
+msgid "By default each imported node is marked as published. All files matching this regular expression will have the status dropdown set to unpublished on the import form. You must include the leading and trailing slash of the regular expression. Leave the field empty if you do not want to use this feature."
+msgstr ""
+
+#: imagefield_import.module:224
+msgid "Advanced settings"
+msgstr ""
+
+#: imagefield_import.module:230
+msgid "Title and body fields"
+msgstr ""
+
+#: imagefield_import.module:231
+msgid "Prepopulate the title field with the name of the image file."
+msgstr ""
+
+#: imagefield_import.module:238
+msgid "EXIF"
+msgstr ""
+
+#: imagefield_import.module:239
+msgid "These settings are only relevant if you have selected %exif above."
+msgstr ""
+
+#: imagefield_import.module:239;1001
+msgid "Get from image EXIF data"
+msgstr ""
+
+#: imagefield_import.module:245
+msgid "EXIF title"
+msgstr ""
+
+#: imagefield_import.module:246
+msgid "Select the EXIF field you want to use to prepopulate the title field on the import form."
+msgstr ""
+
+#: imagefield_import.module:252
+msgid "EXIF body"
+msgstr ""
+
+#: imagefield_import.module:253
+msgid "Select the EXIF field you want to use to prepopulate the body field on the import form."
+msgstr ""
+
+#: imagefield_import.module:261
+msgid "IPTC"
+msgstr ""
+
+#: imagefield_import.module:262
+msgid "These settings are only relevant if you have selected %iptc above."
+msgstr ""
+
+#: imagefield_import.module:262;1005
+msgid "Get from image IPTC data"
+msgstr ""
+
+#: imagefield_import.module:268
+msgid "IPTC title"
+msgstr ""
+
+#: imagefield_import.module:269
+msgid "Select the IPTC field you want to use to prepopulate the title field on the import form."
+msgstr ""
+
+#: imagefield_import.module:275
+msgid "IPTC body"
+msgstr ""
+
+#: imagefield_import.module:276
+msgid "Select the IPTC field you want to use to prepopulate the body field on the import form."
+msgstr ""
+
+#: imagefield_import.module:283
+msgid "Display selection form"
+msgstr ""
+
+#: imagefield_import.module:284
+msgid "Enable this option to display a form allowing you to choose which images to import. Disable this option if you want to import all images or if you are importing thousands of images. If you disable this option you will still be able to apply taxonomy terms and other information, but you will not be able to modify the title and body of each imported image node."
+msgstr ""
+
+#: imagefield_import.module:289
+msgid "Body field widget type"
+msgstr ""
+
+#: imagefield_import.module:290
+msgid "Select the widget you want to use to popuplate the body field of each imported image. Choose one of the textarea settings if you need to enter long descriptions of the imported images."
+msgstr ""
+
+#: imagefield_import.module:292
+msgid "Textfield"
+msgstr ""
+
+#: imagefield_import.module:293
+msgid "Textarea"
+msgstr ""
+
+#: imagefield_import.module:294
+msgid "Textarea, resizable"
+msgstr ""
+
+#: imagefield_import.module:309
+msgid "You need to configure the import directory on the !settings-url. If you don't have the proper permissions to do that, please contact the site administrator."
+msgstr ""
+
+#: imagefield_import.module:309
+msgid "Imagefield import settings page"
+msgstr ""
+
+#: imagefield_import.module:316
+msgid "The upload directory %directory is empty."
+msgstr ""
+
+#: imagefield_import.module:336
+msgid "Title"
+msgstr ""
+
+#: imagefield_import.module:349
+msgid "Import"
+msgstr ""
+
+#: imagefield_import.module:392
+msgid "Published"
+msgstr ""
+
+#: imagefield_import.module:393
+msgid "Unpublished"
+msgstr ""
+
+#: imagefield_import.module:489
+msgid "All @count images in the import folder will be imported."
+msgstr ""
+
+#: imagefield_import.module:505
+msgid "You must enter a title for each image."
+msgstr ""
+
+#: imagefield_import.module:539
+msgid "No images have been selected for import. Please return to the !url."
+msgstr ""
+
+#: imagefield_import.module:539
+msgid "Import images page"
+msgstr ""
+
+#: imagefield_import.module:548
+msgid "Are you sure you want to import @count images?"
+msgstr ""
+
+#: imagefield_import.module:550
+msgid "@count images will be imported from the folder %path. This action cannot be undone."
+msgstr ""
+
+#: imagefield_import.module:551;65;72
+msgid "Import images"
+msgstr ""
+
+#: imagefield_import.module:552
+msgid "Cancel"
+msgstr ""
+
+#: imagefield_import.module:603
+msgid "Importing images to a single node"
+msgstr ""
+
+#: imagefield_import.module:604;635
+msgid "Image import is starting."
+msgstr ""
+
+#: imagefield_import.module:605;636
+msgid "Imported @current out of @total."
+msgstr ""
+
+#: imagefield_import.module:606;637
+msgid "Image import has encountered an error."
+msgstr ""
+
+#: imagefield_import.module:634
+msgid "Importing images to separate nodes"
+msgstr ""
+
+#: imagefield_import.module:719
+msgid "@count images imported."
+msgstr ""
+
+#: imagefield_import.module:724
+msgid "An error occurred while processing %error_operation with arguments: @arguments"
+msgstr ""
+
+#: imagefield_import.module:761
+msgid "You can't import from the image module's directory. The import deletes the original files so you would just be asking for trouble."
+msgstr ""
+
+#: imagefield_import.module:968
+msgid "File"
+msgstr ""
+
+#: imagefield_import.module:981
+msgid "Thumbnail"
+msgstr ""
+
+#: imagefield_import.module:985
+msgid "Status"
+msgstr ""
+
+#: imagefield_import.module:996
+msgid "Don't prepopulate"
+msgstr ""
+
+#: imagefield_import.module:997
+msgid "Use filename as title"
+msgstr ""
+
+#: imagefield_import.module:1016
+msgid "Filename"
+msgstr ""
+
+#: imagefield_import.module:1017
+msgid "Unix timestamp"
+msgstr ""
+
+#: imagefield_import.module:1018
+msgid "File size"
+msgstr ""
+
+#: imagefield_import.module:1019
+msgid "Mime type"
+msgstr ""
+
+#: imagefield_import.module:1020
+msgid "Description"
+msgstr ""
+
+#: imagefield_import.module:1021
+msgid "Software"
+msgstr ""
+
+#: imagefield_import.module:1022
+msgid "Date and time"
+msgstr ""
+
+#: imagefield_import.module:1023
+msgid "Artist"
+msgstr ""
+
+#: imagefield_import.module:1024
+msgid "Copyright"
+msgstr ""
+
+#: imagefield_import.module:1036
+msgid "Object name"
+msgstr ""
+
+#: imagefield_import.module:1037
+msgid "Special instructions"
+msgstr ""
+
+#: imagefield_import.module:1038
+msgid "Date created"
+msgstr ""
+
+#: imagefield_import.module:1039
+msgid "Byline"
+msgstr ""
+
+#: imagefield_import.module:1040
+msgid "Byline title"
+msgstr ""
+
+#: imagefield_import.module:1041
+msgid "City"
+msgstr ""
+
+#: imagefield_import.module:1042
+msgid "Province/state"
+msgstr ""
+
+#: imagefield_import.module:1043
+msgid "Country/primary location name"
+msgstr ""
+
+#: imagefield_import.module:1044
+msgid "Original transmission reference"
+msgstr ""
+
+#: imagefield_import.module:1045
+msgid "Headline"
+msgstr ""
+
+#: imagefield_import.module:1046
+msgid "Credit"
+msgstr ""
+
+#: imagefield_import.module:1047
+msgid "Source"
+msgstr ""
+
+#: imagefield_import.module:1048
+msgid "Copyright notice"
+msgstr ""
+
+#: imagefield_import.module:1049
+msgid "Caption/abstract"
+msgstr ""
+
+#: imagefield_import.module:1070
+msgid "WRITABLE"
+msgstr ""
+
+#: imagefield_import.module:1073
+msgid "NOT WRITABLE"
+msgstr ""
+
+#: imagefield_import.module:1121
+msgid "Click the checkboxes next to the images you want to import. You can add a title and a body to each image before you start the import."
+msgstr ""
+
+#: imagefield_import.module:94
+msgid "import to imagefield"
+msgstr ""
+
+#: imagefield_import.module:66;81
+msgid "Import images into CCK imagefields from an import folder in filesystem."
+msgstr ""
+
+#: imagefield_import.module:73
+msgid "Confirm image import."
+msgstr ""
+
+#: imagefield_import.module:80
+msgid "Imagefield import"
+msgstr ""
+
+#: imagefield_import.info:0
+msgid "Imagefield Import"
+msgstr ""
+
+#: imagefield_import.info:0
+msgid "Import batches of images from a directory on your server."
+msgstr ""
+
+#: imagefield_import.info:0
+msgid "CCK"
+msgstr ""
+

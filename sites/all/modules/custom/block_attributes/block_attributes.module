@@ -1,0 +1,69 @@
+<?php
+// $Id$
+
+function block_attributes($block) {
+  $ret = db_fetch_object(db_query('SELECT css_id, css_class FROM {block_attributes} WHERE module = "%s" AND delta = "%s"', $block->module, $block->delta));
+  if ($ret !== FALSE) {
+    return $ret;
+  }
+
+  $undef = (object) NULL;
+  $undef->css_id = '';
+  return $undef;
+}
+
+function block_attributes_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'block_admin_configure' || $form_id == 'block_add_block_form') {
+    $block->module = $form['module']['#value'];
+    $block->delta = $form['delta']['#value'];
+    $attributes = block_attributes($block);
+    
+    $form['block_attributes'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Block Attributes settings'),
+      '#collapsible' => TRUE,
+      '#weight' => -1,
+    );
+    $form['block_attributes']['css_id'] = array(
+      '#type' => 'textfield',
+      '#title' => t('CSS Id'),
+      '#default_value' => $attributes->css_id,
+      '#description' => t('You must add &lt;?php print block_attributes_id($block); ?&gt; to your theme\'s block.tpl.php file to make the id appear.'),
+    );
+    $form['block_attributes']['css_class'] = array(
+      '#type' => 'textfield',
+      '#title' => t('CSS class(es)'),
+      '#default_value' => $attributes->css_class,
+      '#description' => t('Separate classes with a space. You must add &lt;?php print block_attributes_class($block); ?&gt; to your theme\'s block.tpl.php file to make the classes appear.'),
+    );
+
+    $form['#submit'][] = 'block_attributes_form_submit';
+  }
+}
+
+function block_attributes_form_submit($form, &$form_state) {
+  if ($form_state['values']['form_id'] == 'block_admin_configure' || $form_state['values']['form_id'] == 'block_add_block_form') {
+    if (isset($form_state['values']['css_id']) && user_access('administer blocks')) {
+      $module = $form_state['values']['module'];
+      $delta = $form_state['values']['delta'];
+      $id = $form_state['values']['css_id'];
+      $class = $form_state['values']['css_class'];
+  
+      db_query('DELETE FROM {block_attributes} WHERE module = "%s" AND delta = "%s"', $module, $delta);
+  
+      if (!empty($id) || !empty($class)) {
+        db_query('INSERT INTO {block_attributes} (module, delta, css_id, css_class) VALUES ("%s", "%s", "%s", "%s")', $module, $delta, $id, $class);
+      }
+    }
+  }
+}
+
+function block_attributes_id($block) {
+  $attributes = block_attributes($block);
+  return check_plain($attributes->css_id);
+}
+
+function block_attributes_class($block) {
+  $attributes = block_attributes($block);
+  return check_plain($attributes->css_class);
+}

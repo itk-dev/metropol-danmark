@@ -1,0 +1,12 @@
+; $Id: favicon.info,v 1.1.4.1 2008/08/08 14:53:43 robloach Exp $
+name = Favicon
+description = Requests to /favicon.ico return the site's actual favicon.
+core = 6.x
+
+
+; Information added by drupal.org packaging script on 2008-08-26
+version = "6.x-1.0"
+core = "6.x"
+project = "favicon"
+datestamp = "1219766112"
+

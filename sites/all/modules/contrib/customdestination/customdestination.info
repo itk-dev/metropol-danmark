@@ -1,0 +1,11 @@
+; $Id: customdestination.info,v 1.1 2008/05/23 18:12:01 flevour Exp $
+name = Custom Destination
+description = Programmatically set the destination a form redirects to upon submission.
+core = 6.x
+
+; Information added by drupal.org packaging script on 2010-10-13
+version = "6.x-1.5"
+core = "6.x"
+project = "customdestination"
+datestamp = "1286973071"
+

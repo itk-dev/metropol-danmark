@@ -1,0 +1,212 @@
+<?php
+// $Id: file_force.module,v 1.3.2.6 2010/12/05 20:02:22 arski Exp $
+
+/**
+ * @file file_force.module
+ * 
+ * File Force module.
+ */
+ 
+/**
+ * Implementation of hook_menu().
+ */
+function file_force_menu() {
+  // Admin location
+  $items['admin/settings/file-force'] = array(
+    'title' => 'File force',
+    'description' => 'Configure File Force settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('file_force_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'file_force.admin.inc',
+  );
+  
+  return $items;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function file_force_theme() {
+  $theme = array();
+  
+  // FileField formatters
+  if (module_exists('filefield')) {
+    $theme['file_force_formatter_default_ff'] = array(
+      'arguments' => array('element' => NULL),
+      'file' => 'file_force_formatter.inc',
+    );
+    $theme['file_force_formatter_url_plain_ff'] = array(
+      'arguments' => array('element' => NULL),
+      'file' => 'file_force_formatter.inc',
+    );
+    $theme['file_force_item'] = array(
+      'arguments' => array('file' => NULL, 'field' => NULL),
+      'file' => 'file_force_formatter.inc',
+    );
+    $theme['file_force_file'] = array(
+      'arguments' => array('file' => NULL),
+      'file' => 'file_force_formatter.inc',
+    );
+  }
+  
+  // ImageField formatters
+  if (module_exists('imagefield')) {
+    $theme['file_force_formatter_image_imagelink_ff'] = array(
+      'arguments' => array('element' => NULL),
+      'file' => 'file_force_formatter.inc',
+    );
+  }
+  
+  // ImageCache formatters
+  if (module_exists('imagecache')) {
+    foreach (imagecache_presets() as $preset) {
+      $theme['file_force_formatter_'. $preset['presetname'] .'_imagelink_ff'] = array(
+        'arguments' => array('element' => NULL),
+        'file' => 'file_force_formatter.inc',
+        'function' => 'theme_file_force_formatter_imagecache_imagelink_ff',
+      );
+    }
+  }
+      
+  return $theme;
+}
+
+/**
+ * Implementation of hook_file_download().
+ *
+ * This is what adds the headers which activates the force downloading.
+ */
+function file_force_file_download($filepath) {
+  if (!isset($_GET['download'])) {
+	  // Our menu hook wasn't called, so we should ignore this.
+	  return NULL;
+  }
+
+  // Generate the full file path for the download
+  $filepath = file_create_path($filepath);
+
+  // Try to get the mime type information for the file
+  $mimeinfo = '';
+  if (function_exists('finfo_open')) {
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mimeinfo = finfo_file($finfo, $filepath);
+    finfo_close($finfo);
+  } else if (function_exists('mime_content_type')) {
+    $mimeinfo = mime_content_type($filepath);
+  }
+
+  // Return a list of headers that will force the download
+  return array(
+    'Content-Type:' . $mimeinfo,
+    'Content-Disposition: attachment; filename="' . basename($filepath) . '";',
+    // Content-Length is also a good header to send, as it allows the browser to
+    // display a progress bar correctly.
+    // There's a trick for determining the file size for files over 2 GB. Nobody
+    // should be using this module with files that large, but… the sprintf()
+    // trickery makes sure the value is correct for files larger than 2GB. See
+    // note at http://php.net/filesize
+    'Content-Length: ' . sprintf('%u', filesize($filepath)),
+  );
+}
+
+/**
+ * Implementation of hook_theme_registry_alter().
+ */
+function file_force_theme_registry_alter(&$theme_registry) {
+  $ff_path = drupal_get_path('module', 'file_force');
+  $ff_file_path = $ff_path.'/file_force.theme.inc';
+  // Check if FF is enable for upload attachments, and that the function is not overriden by a theme already
+  if (variable_get('file_force_upload_attachments', 0) !== 0 && substr($theme_registry['upload_attachments']['function'], 0, 6) === 'theme_') {
+    $theme_registry['upload_attachments']['function'] = 'file_force_upload_attachments';
+    $theme_registry['upload_attachments']['file'] = $ff_file_path;
+  }
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function file_force_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'image_admin_settings') {
+    foreach (element_children($form['image_sizes']) as $key) {
+      $form['image_sizes'][$key]['link']['#options']['ff'] = t('Force Download');
+    }
+  }
+}
+
+/**
+ * Implementation of hook_link_alter().
+ */
+function file_force_link_alter(&$links, $node) {
+  if ($node->type == 'image' && function_exists('image_get_sizes')) {
+    $request = isset($_GET['size']) ? $_GET['size'] : IMAGE_PREVIEW;
+    foreach (image_get_sizes() as $key => $size) {
+      if ($size['link'] == 'ff') {
+        if (isset($links['image_size_'. $key]) && isset($node->images[$key]) && $node->images[$key] != $node->images[$request]) {
+          $links['image_size_'. $key] = array(
+            'title' => t($size['label']),
+            'href' => "image/view/{$node->nid}/$key",
+            'query' => array('download' => '1'),
+          );
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implementation of hook_field_formatter_info().
+ *
+ * Add file_force formatters to CCK file/image fields if
+ * the filefield/imagefield.module exists.
+ */
+function file_force_field_formatter_info() {
+  $formatters = array();
+  
+  // Handle filefield files.
+  if (module_exists('filefield')) {
+    $formatters['default_ff'] = array(
+      'label' => t('File Force: Generic files'),
+      'field types' => array('filefield'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+      'description' => t('Displays all kinds of files with an icon and a linked file description.'),
+    );
+    $formatters['url_plain_ff'] = array(
+      'label' => t('File Force: URL to file'),
+      'field types' => array('filefield'),
+      'description' => t('Displays a full URL to the file.'),
+    );
+  }
+  
+  // Handle imagefield files.
+  if (module_exists('imagefield')) {
+    $formatters['image_imagelink_ff'] = array(
+      'label' => t('File Force: Image linked to file'),
+      'field types' => array('image', 'filefield'),
+      'description' => t('Displays image files in their original size.'),
+    );
+  }
+  
+  // Handle imagecache.
+  if (module_exists('imagecache')) {
+    foreach (imagecache_presets() as $preset) {
+      $formatters[$preset['presetname'] .'_imagelink_ff'] = array(
+        'label' => t('File Force: @preset image linked to image', array('@preset' => $preset['presetname'])),
+        'field types' => array('image', 'filefield'),
+      );
+    }
+  }
+  
+  return $formatters;
+}
+
+/**
+ * Simplified version of the default file_create_url method to avoid private download method dependency.
+ */
+function file_force_create_url($path) {
+  // Strip file_directory_path from $path. We only include relative paths in urls.
+  if (strpos($path, file_directory_path() . '/') === 0) {
+    $path = trim(substr($path, strlen(file_directory_path())), '\\/');
+  }
+  return url('system/files/' . $path, array('absolute' => TRUE));
+}

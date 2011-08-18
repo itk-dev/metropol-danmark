@@ -1,0 +1,100 @@
+<?php
+
+// $Id$
+ 
+/**
+ * Implementation of hook_schema().
+ */
+function stylestripper_schema() {
+  $schema = array();
+  $schema['stylestripper'] = array(
+    'description' => t("An index of all module CSS files."),
+    'fields' => array(
+      'fid' => array(
+        'description' => t('File ID'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'length' => 10,
+      ),    
+      'module_name' => array(
+        'description' => t('The name of the module.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''
+      ),
+      'css_filename' => array(
+        'description' => t('The path of the css file, relative to the Drupal root; e.g. modules/node/node.module.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''
+      ),
+      'updated' => array(
+        'description' => t('Boolean indicating whether or not the record was updated while searching for new css files'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'length' => 1,
+        'size' => 'tiny',        
+      ),
+    ),
+    'indexes' => array(
+      'updated' => array('updated'),
+    ),
+    'primary key' => array('fid'),
+  );
+  
+  $schema['stylestripper_settings'] = array(
+    'description' => t("Stores CSS file settings"),
+    'fields' => array(
+      'fid' => array(
+        'description' => t('Stylestripper file ID'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0
+      ),
+      'theme' => array(
+        'description' => t('Name of theme'),
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => ''
+      ),
+      'status' => array(
+        'description' => t('Boolean indicating whether or not this css file is enabled.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'length' => 1,
+        'size' => 'tiny', 
+      ),
+    ),
+    'indexes' => array(
+      'status' => array('status'),
+    ),
+    'primary key' => array('fid', 'theme'),    
+  );    
+  return $schema;
+}
+ 
+ /**
+ * Implementation of hook_install()
+ */
+function stylestripper_install() {
+  drupal_install_schema('stylestripper');
+     
+  // New module weights in core: put stylestripper as the very last in the chain.
+  db_query("UPDATE {system} SET weight = 90 WHERE name = 'stylestripper'");
+}
+
+ /**
+ * Implementation of hook_install()
+ */
+function stylestripper_uninstall() {
+  drupal_uninstall_schema('stylestripper');
+  
+  // Deleting variables
+  db_query("DELETE FROM {variable} WHERE name LIKE 'stylestripper_%%'");
+}

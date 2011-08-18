@@ -1,0 +1,15 @@
+name = Field Rename
+description = Rename a CCK field.
+dependencies[] = content
+package = CCK
+version = "6.x-1.0"
+core = "6.x"
+project = "cck_field_rename"
+
+
+; Information added by drupal.org packaging script on 2011-06-28
+version = "6.x-1.0"
+core = "6.x"
+project = "cck_field_rename"
+datestamp = "1309265214"
+

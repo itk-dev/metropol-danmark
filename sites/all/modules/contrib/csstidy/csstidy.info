@@ -1,0 +1,13 @@
+; $Id: csstidy.info,v 1.10.2.2 2010/12/07 00:09:53 philbar Exp $
+name = CSSTidy
+description = "Optimizes CSS using CSSTidy."
+php = 5
+package = Performance and scalability
+
+
+; Information added by drupal.org packaging script on 2010-12-12
+version = "6.x-2.1"
+core = "6.x"
+project = "csstidy"
+datestamp = "1292136040"
+

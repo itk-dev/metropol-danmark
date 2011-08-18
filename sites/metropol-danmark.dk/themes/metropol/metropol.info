@@ -1,0 +1,51 @@
+; Name and description
+name        = metropol
+description = Designit metropol-danmark theme for Drupal 6.
+
+; Version and engine
+core   = 6.x
+engine = phptemplate
+
+; Screenshot
+screenshot = images/screenshot.png
+
+; CSS
+stylesheets[all][]   = css/designit/designit.base.min.css
+stylesheets[all][]   = css/style.css
+stylesheets[all][]   = css/menu2.css
+
+; Print CSS
+stylesheets[print][] = css/metropol-danmark.print.css
+
+; CSS for IE
+conditional-stylesheets[if IE][all][] = css/designit/designit.base.ie.min.css
+conditional-stylesheets[if IE 6][all][] = css/IE_6_0.css
+conditional-stylesheets[if IE 5][all][] = css/IE_5_5.css
+
+; JavaScript
+scripts[]   = js/cufon-yui.js
+scripts[]   = js/Marconi_Com_Book_400-Marconi_Com_Book_italic_400.font.js
+scripts[]   = js/metropol-danmark.js
+
+; Regions
+regions[topmessage]     = topmessage
+regions[header]         = header
+regions[primary]        = primary content
+regions[secondary]      = secondary content
+regions[tertiary]       = tertiary content
+regions[primary_top]    = primary content top
+regions[primary_bottom] = primary content bottom
+regions[bottom_blocks] = bottom content blocks
+regions[footer]         = footer
+
+; Page elements
+features[] = logo
+features[] = name
+features[] = slogan
+features[] = mission
+features[] = node_user_picture
+features[] = comment_user_picture
+features[] = search
+features[] = favicon
+features[] = primary_links
+features[] = secondary_links

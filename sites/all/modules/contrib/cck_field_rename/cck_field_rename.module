@@ -1,0 +1,44 @@
+<?php
+
+/**
+ * @file
+ * The CCK Rename Field module used for rename a CCk Field.
+ */
+
+/**
+ * Implementation of hook_help().
+ */
+function cck_field_rename_help($section) {
+  switch ($section) {
+    case 'admin/help#CCK Field Rename':
+    case 'admin/modules#description':
+      $output = "Rename a CCK field.";
+      return $output;
+  }
+}
+
+/**
+ * Implementation of hook_perm
+ */
+function cck_field_rename_perm() {
+  return array('access cck_field_rename', 'administer cck_field_rename');
+}
+ 
+/**
+ * Menu callback. Prints a listing of active nodes on the site.
+ */
+
+function cck_field_rename_menu() {
+  $items = array();
+
+  $items['admin/content/cck_field_rename'] = array(
+    'title' => 'CCK Field Rename',
+    'description' => 'Rename a CCK field.',
+    'access arguments' => array('access cck_field_rename'),
+    'page callback' => 'cck_field_rename_page',
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'cck_field_rename.admin.inc',
+  );
+  
+  return $items;
+}

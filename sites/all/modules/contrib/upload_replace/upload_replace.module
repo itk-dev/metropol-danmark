@@ -1,0 +1,151 @@
+<?php
+// $Id: upload_replace.module,v 1.1.2.5 2009/12/30 21:03:28 markdrupal Exp $
+/**
+ * @file
+ * A module file for providing functionality to replace files on upload
+ * Typical Drupal behavior is to rename files on upload to <filename>_0.<ext>
+ * This module modifies that behavior.
+ *
+ * 1.0 - Behavior is as follows: when a user is replacing a file (remove and save).
+ *   if the file to be removed is <filename>.<ext> and the file to be saved is
+ *   <filename>_<[0-9]+>.<ext> then the file will be removed and the new file will
+ *   be renamed to <filename>.<ext>
+ */
+
+
+/**
+ * Implementation of hook_file_update()
+ */
+function upload_replace_file_update(&$new_file) {
+  if (!$new_file->fid) {
+    //Nothing to do if no fileid
+    return;
+  }
+  $period_pos = strrpos($new_file->filename, '.');
+  if($period_pos !== FALSE){
+    //remove the extension
+    $file_name = substr($new_file->filename, 0, $period_pos);
+  }
+  else {
+    //no period, no file extension
+    $file_name = $new_file->filename;
+  }
+
+  $desired_destination = preg_replace('/('. $file_name .')_[0-9]+(\..*)$/', '$1$2', $new_file->filepath); //$1=filename, $2=file extension
+  $query = "SELECT filepath FROM {files} WHERE fid=%d";
+  $db_path = db_result(db_query($query, $new_file->fid));
+  if ($db_path != $new_file->filepath) {
+    //this happens when a reversion is being reverted
+    $next_good_filepath = file_destination($desired_destination, FILE_EXISTS_RENAME);
+    $query = "UPDATE {files} SET filepath='%s' WHERE fid=%d";
+    db_query($query, $next_good_filepath, $new_file->fid);
+    $new_file->filepath = $desired_destination;
+  }
+  else {
+    //If the filename has be modified by adding a _0 value, or
+    //on certain situations the filepath will not match the filepath in the db, such as
+    //when reverting a revision.  When reverting a revision change the filename as well
+    if (!strpos($new_file->filepath, "/". $new_file->filename)) {
+      //the filename is not in the filepath, so drupal must have added a "_0" before the extension
+      //find the file that is blocking this file from keeping the correct path
+      $query = 'SELECT * FROM {files} WHERE filepath="%s"';
+      $result = db_query($query, $desired_destination);
+      while ($file = db_fetch_object($result)) {
+        $is_blocked = TRUE;
+        $blocking_file = $file;
+        $tmp_destination = file_directory_temp() ."/$blocking_file->filename";
+      }
+
+      $old_destination = $db_path;
+      $query = "UPDATE {files} SET filepath='%s' WHERE fid=%d";
+      //Swap the files
+      if ($is_blocked) {
+        //move the blocking file to a temparary location
+        $from = $desired_destination; //because $from gets overwritten by file_move
+        if (!file_move($from, $tmp_destination)) {
+          drupal_set_message('The file %old could not be moved to %new', array('%old' => $desired_destination, '%new' => $tmp_destination), 'error');
+          return;
+        }
+        $tmp_destination = $from; //since the file copy may have placed the file in a modified location update the tmp destination with the actual location
+        //move blocking file was successful, update the DB
+        db_query($query, $tmp_destination, $blocking_file->fid);
+      }
+
+
+      //move the newfile to the prefered location
+      $from = $old_destination;//because $from gets overwritten by file_move
+      if (!file_move($from, $desired_destination)) {
+        drupal_set_message('The file %old could not be moved to %new', array('%old' => $old_destination, '%new' => $desired_destination), 'error');
+        return;
+      }
+      //move newfile was successful, update the DB
+      db_query($query, $desired_destination, $new_file->fid);
+      $new_file->filepath = $desired_destination;//set the newfile's path to the correct path
+
+
+      if ($is_blocked) {
+        //move the older file from temp to the new _0 location
+        if (!file_move($tmp_destination, $old_destination)) {
+          drupal_set_message('The file %old could not be moved to %new', array('%old' => $tmp_destination, '%new' => $old_destination), 'error');
+          return;
+        }
+        //move blocking file was successful, update the DB with the actual location after file copy, so we use tmp_destination as it was updated during the move
+        db_query($query, $tmp_destination, $blocking_file->fid);
+        //set the blocking files newpath
+        $blocking_file->filepath = $tmp_destination;
+      }
+    }
+  }
+  //Have to clear the cache because the revision data is cached somewhere
+  /*
+   * Find the nids where this file is used
+  $query = "SELECT DISTINCT nid FROM {files} WHERE fid=%d";
+  $result = db_query($query, $new_file->fid);
+  while($data = db_fetch_object($result)) {
+    cache_clear_all("content:$data->nid");
+  }
+  */
+  //This is inefficent, but how can we determine what nodes use this file?
+  cache_clear_all('*', 'cache_content', TRUE);
+  //If a user has imagecache, the cached image that was just uploaded needs to be flushed
+  if (module_exists('imagecache') && (strpos($new_file->filemime, 'image') !== FALSE)) {
+    foreach (imagecache_presets() as $preset) {
+      $image_path = realpath(file_directory_path() .'/imagecache/'. $preset['presetname']);
+      preg_match('@/([^/]+)$@', $blocking_file->filepath, $b_file);
+      preg_match('@/([^/]+)$@', $new_file->filepath, $n_file);
+      $files = array($b_file[1], $n_file[1]);
+      foreach ($files as $f) {
+        $path = "$image_path/images/$f";
+        if (is_file($path) || is_link($path)) {
+          unlink($path);
+        }
+      }
+    }
+  }
+
+  //if there is image field CCK the admin thumbnail needs to be remade
+  if (module_exists('imagefield') && (strpos($new_file->filemime, 'image') !== FALSE)) {
+    $files = array($new_file);
+    if ($blocking_file) {
+      $files[] = $blocking_file;
+    }
+    foreach ($files as $f) {
+      //Get the old image
+      $path = realpath(imagefield_file_admin_thumb_path($f, FALSE));
+      if (is_file($path) || is_link($path)) {
+        //remove the old image
+        unlink($path);
+      }
+      //Recreate the new image
+      imagefield_file_admin_thumb_path($f, TRUE);
+    }
+  }
+}
+
+/**
+ * HOOK_file_delete, update the filepath in the file object before deleting as we may have altered it above
+ * @param object $new_file
+ */
+function upload_replace_file_delete(&$file) {
+  $file->filepath = db_result(db_query("SELECT filepath FROM {files} WHERE fid = %d", $file->fid));
+}

@@ -1,0 +1,13 @@
+; $Id: simplenews_multisignup.info,v 1.2 2009/06/17 22:08:33 zoo33 Exp $
+name = Simplenews Multiple Signup Block
+description = Allows visitors to sign up for multiple newsletters in a single block.
+dependencies[] = simplenews
+package = Mail
+core = 6.x
+
+; Information added by drupal.org packaging script on 2010-07-11
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "simplenews_multisignup"
+datestamp = "1278835668"
+

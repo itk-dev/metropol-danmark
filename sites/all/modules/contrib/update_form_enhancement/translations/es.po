@@ -1,0 +1,56 @@
+﻿# $Id: es.po,v 1.1.2.2 2008/10/26 14:48:10 markuspetrux Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  update_form_enhancement.module,v 1.1.2.1 2008/09/24 20:55:39 markuspetrux
+#  update_form_enhancement.info,v 1.1 2008/09/20 19:57:36 markuspetrux
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2008-10-26 04:14+0100\n"
+"PO-Revision-Date: 2008-10-26 04:14+0100\n"
+"Last-Translator: markus_petrux <EMAIL@ADDRESS>\n"
+"Language-Team: Spanish <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\\n\n"
+
+#: update_form_enhancement.module:16 update_form_enhancement.info:0
+msgid "Enhances update.php user interface by separating modules that are up to date from those that are not."
+msgstr "Mejora la interfaz de update.php separando los módulos que requieren proceso de actualización de los que no."
+
+#: update_form_enhancement.module:65
+msgid "All installed modules are up to date. You may still reapply any update task should you need to."
+msgstr "Todos los módulos instalados están al corriente. Aún así, usted puede reaplicar cualquier tarea de actualización si lo estima necesario."
+
+#: update_form_enhancement.module:72
+msgid "All installed modules have pending update tasks."
+msgstr "Todos los módulos instalados tienen tareas de actualización pendientes."
+
+#: update_form_enhancement.module:78
+msgid "Modules with pending update tasks are grouped first. You may still reapply any update task to any module should you need to."
+msgstr "El primer grupo muestra los módulos que tienen tareas de actualización pendientes. Aún así, usted puede reaplicar tareas de actualización de cualquier otro módulo si lo estima necesario."
+
+#: update_form_enhancement.module:84
+msgid "All modules in this group have pending update tasks."
+msgstr "Todos los módulos en este grupo tienen tareas de actualización pendientes."
+
+#: update_form_enhancement.module:99
+msgid "All modules in this group are up to date."
+msgstr "Todos los módulos en este grupo están al corriente de actualizaciones."
+
+#: update_form_enhancement.module:0
+msgid "update_form_enhancement"
+msgstr ""
+
+#: update_form_enhancement.info:0
+msgid "Update form enhancement"
+msgstr ""
+
+#: update_form_enhancement.info:0
+msgid "Administration"
+msgstr "Administración"

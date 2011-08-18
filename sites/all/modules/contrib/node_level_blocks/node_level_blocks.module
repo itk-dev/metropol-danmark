@@ -1,0 +1,175 @@
+<?php
+// $Id: node_level_blocks.module,v 1.1 2010/05/19 19:54:26 skilip Exp $
+
+/**
+ * @file
+ * Allows node editors to assign blocks to regions on a node base.
+ *
+ * @name Node-level Blocks
+ * @author skilip
+ */
+
+/**
+ * Implement hook_perm().
+ * @link http://api.drupal.org/api/function/hook_perm/6
+ */
+function node_level_blocks_perm() {
+  return array('administer node_level_blocks', 'edit node_level_blocks');
+}
+
+/**
+ * Implement hook_nodeapi().
+ * @link http://api.drupal.org/api/function/hook_nodeapi/6
+ */
+function node_level_blocks_nodeapi(&$node, $op, $arg3 = NULL, $arg4 = NULL) {
+  switch ($op) {
+    case 'load':
+    case 'prepare':
+      $node->node_level_blocks = array(
+        'blocks' => node_level_blocks_node_load_blocks($node->nid),
+        'settings' => node_level_blocks_node_type_settings($node->type),
+      );
+      break;
+
+    case 'update':
+    case 'insert':
+      if ($node->node_level_blocks && !empty($node->node_level_blocks['blocks'])) {
+        node_level_blocks_node_save_blocks($node);
+      }
+      break;
+  }
+}
+
+/**
+ * Implement hook_theme().
+ * @link http://api.drupal.org/api/function/hook_theme/6
+ */
+function node_level_blocks_theme() {
+  return array(
+    'node_level_blocks_fieldset' => array(
+      'template' => 'node_level_blocks-fieldset',
+      'file' => 'node_level_blocks.admin.inc',
+      'arguments' => array('form' => NULL),
+    ),
+  );
+}
+
+/**
+ * Implement hook_form_alter().
+ */
+function node_level_blocks_form_alter(&$form, &$form_state, $form_id) {
+
+  // Add a fieldset to the node type form in which admins can enable or disable node_level_blocks per content type.
+  if ($form_id == 'node_type_form') {
+
+    module_load_include('inc', 'node_level_blocks', 'node_level_blocks.admin');
+    drupal_add_js(drupal_get_path('module', 'node_level_blocks') .'/js/node_level_blocks.js');
+
+    node_level_blocks_node_type_form($form, $form_state);
+  }
+
+  // Add the node_level_blocks fieldset to the node edit form if enabled for this content type.
+  if ($form['#node'] && ($form_id == $form['#node']->type .'_node_form')) {
+    $settings = node_level_blocks_node_type_settings($form['#node']->type);
+
+    if ($settings->enabled) {
+      module_load_include('inc', 'node_level_blocks', 'node_level_blocks.admin');
+      drupal_add_js(drupal_get_path('module', 'node_level_blocks') .'/js/node_level_blocks.js');
+
+      node_level_blocks_fieldset_node_edit_form($form, $form_state);
+    }
+  }
+}
+
+/**
+ * Saves block - region relations for a given node page.
+ */
+function node_level_blocks_node_save_blocks($node) {
+  $blocks = $node->node_level_blocks['blocks'];
+  $settings = $blocks['settings'];
+  unset($blocks['settings']);
+
+  // Detele old entries for this node.
+  db_query("DELETE FROM {node_level_blocks} WHERE nid = %d", $node->nid);
+
+  foreach ($blocks as $block) {
+    $block = (object) $block;
+    if ($block->region != BLOCK_REGION_NONE) {
+      db_query("INSERT INTO {node_level_blocks} (nid, bid, region, weight) VALUES (%d, %d, '%s', %d)", $node->nid, $block->bid, $block->region, $block->weight);
+    }
+  }
+}
+
+/**
+ * Loads all blocks associated with the node of the given nid.
+ */
+function node_level_blocks_node_load_blocks($nid) {
+  $blocks = array();
+  $sql = "SELECT s.bid, s.region, s.weight, b.module, b.delta, b.cache
+    FROM {node_level_blocks} s
+    INNER JOIN {blocks} b
+    ON s.bid = b.bid
+    WHERE s.nid = %d
+    ORDER BY s.weight";
+
+  $result = db_query($sql, $nid);
+  while ($block = db_fetch_object($result)) {
+    $blocks[$block->bid] = $block;
+  }
+  return $blocks;
+}
+
+/**
+ * Implementation of hook_preprocess_page().
+ */
+function node_level_blocks_preprocess_page(&$vars) {
+  if ($vars['node']) {
+    $regions = array();
+
+    if (arg(2) == 'edit' && !$vars['node']->node_level_blocks['settings']->display_node_edit) {
+      return;
+    }
+
+    // Walk through the blocks assigned to regions for this node.
+    foreach ($vars['node']->node_level_blocks['blocks'] as $bid => $block) {
+
+      // Create the array for the current region.
+      if (!isset($regions[$block->region])) {
+        $regions[$block->region] = array();
+      }
+
+      // Get either the cached contents for the block, or get it right from the module which defined the block.
+      if (($cid = _block_get_cache_id($block)) && ($cache = cache_get($cid, 'cache_block'))) {
+        $array = $cache->data;
+      }
+      else {
+        $array = module_invoke($block->module, 'block', 'view', $block->delta);
+        if (isset($cid)) {
+          // Store the returned block contents into the database.
+          cache_set($cid, $array, 'cache_block', CACHE_TEMPORARY);
+        }
+      }
+
+      if (isset($array) && is_array($array)) {
+        foreach ($array as $k => $v) {
+          $block->$k = $v;
+        }
+      }
+      // Theme the block.
+      $regions[$block->region]["$block->module-$block->delta"] = array('#value' => theme('block', $block), '#weight' => $block->weight);
+    }
+
+    // Render the regions.
+    foreach ($regions as $region => $data) {
+      $vars[$region] .= drupal_render($data);
+      unset($data['#value']);
+    }
+  }
+}
+
+/**
+ * Helper function for getting the snipets configuration settings for a node type.
+ */
+function node_level_blocks_node_type_settings($node_type) {
+  return variable_get("node_level_blocks_enabled_$node_type", (object) array('enabled' => FALSE, 'display_node_edit' => FALSE, 'regions' => array()));
+}

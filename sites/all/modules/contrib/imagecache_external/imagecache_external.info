@@ -1,0 +1,12 @@
+; $Id: imagecache_external.info,v 1.1 2010/11/18 06:27:55 larowlan Exp $
+name = Imagecache External
+description = Allows you to fetch and use external images with imagecache
+dependencies[] = imagecache
+core = 6.x
+
+; Information added by drupal.org packaging script on 2010-11-18
+version = "6.x-1.0"
+core = "6.x"
+project = "imagecache_external"
+datestamp = "1290063072"
+

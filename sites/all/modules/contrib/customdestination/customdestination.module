@@ -1,0 +1,248 @@
+<?php
+// $Id: customdestination.module,v 1.9 2010/10/09 15:45:26 flevour Exp $
+
+/**
+ * Implementation of hook_help().
+ */
+function customdestination_help($path, $arg) {
+  $output = '';
+  switch ($path) {
+    case "admin/help#customdestination":
+      $output = '<p>'.  t("Programmatically sets the destination a form redirects to upon submission") .'</p>';
+      break;
+  }
+  return $output;
+}
+
+/**
+* Implementation of hook_perm().
+*/
+function customdestination_perm() {
+  return array('administer custom destination');
+}
+
+/**
+ * Implementation of hook_menu
+ */
+function customdestination_menu() {
+  $items['admin/settings/customdestination'] = array(
+    'title' => 'Custom destination',
+    'description' => 'List of custom destinations set',
+    'page callback' => 'customdestination_overview',
+    'access arguments' => array('administer custom destination'),
+  );
+  $items['admin/settings/customdestination/list'] = array(
+    'title' => 'List',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['admin/settings/customdestination/add'] = array(
+    'title' => 'Add custom destination',
+    'description' => 'Add a new custom destination',
+    'page callback' => 'customdestination_edit',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['admin/settings/customdestination/edit'] = array(
+    'title' => 'Edit',
+    'page callback' => 'customdestination_edit',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/settings/customdestination/delete'] = array(
+    'title' => 'Delete custom destination',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('customdestination_delete_confirm'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Menu callback; handles pages for creating and editing Custom destinations.
+ */
+function customdestination_edit($fid = '') {
+  if (!empty($fid)) {
+    $customdestination = customdestination_load($fid);
+    drupal_set_title(check_plain($customdestination['fid']));
+    $output = drupal_get_form('customdestination_form', $customdestination);
+  }
+  else {
+    $output = drupal_get_form('customdestination_form');
+  }
+
+  return $output;
+}
+
+/**
+ * Return a form for editing or creating an individual custom destination.
+ *
+ * @ingroup forms
+ * @see customdestination_form_validate()
+ * @see customdestination_form_submit()
+ */
+function customdestination_form(&$form_state, $edit = array('fid' => '', 'dst' => '')) {
+  $form['fid'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Form ID'),
+    '#default_value' => $edit['fid'],
+    '#size' => 30,
+    '#description' => t("The ID of the form you want to change (without quotes)."),
+    '#required' => TRUE,
+  );
+  $form['dst'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Destination'),
+    '#default_value' => $edit['dst'],
+    '#size' => 30,
+    '#description' => t("The destination to redirect to upon form submission. No leading and trailing slash."),
+    '#required' => TRUE,
+  );
+  if ($edit['fid']) {
+    // use hidden value here if can't usere INSERT OR UPDATE
+    $form['submit'] = array('#type' => 'submit', '#value' => t('Update custom destination'));
+  }
+  else {
+    $form['submit'] = array('#type' => 'submit', '#value' => t('Create new custom destination'));
+  }
+
+  return $form;
+}
+
+/**
+ * Save a new custom destination to the database.
+ */
+function customdestination_form_submit($form, &$form_state) {
+  customdestination_save($form_state['values']['fid'], $form_state['values']['dst']);
+
+  drupal_set_message(t('The custom destination has been saved.'));
+  $form_state['redirect'] = 'admin/settings/customdestination';
+  return;
+}
+
+/**
+ * Verify that a new URL alias is valid
+ */
+function customdestination_form_validate($form, &$form_state) {
+  $fid = $form_state['values']['fid'];
+  $dst = $form_state['values']['dst'];
+
+  // check if form exists - NOT YET IMPLEMENTED
+  /* if (!_customdestination_form_exists($fid)) {
+    form_set_error('fid', t("The form id '@form_id' doesn't exist in the system.", array('@form_id' => $fid)));
+  } */
+  
+  // check if form id is valid
+  if (!preg_match("/[a-z_0-9]+/", $fid)) {
+    form_set_error('fid', t("The form '@form_id' is invalid. A valid form ID contains only alphanumeric characters and underscores.", array('@form_id' => $fid)));
+  }
+  
+  // check if destination exists and is accessible by the current user
+  if (!menu_valid_path(array('link_item' => $dst))) {
+    form_set_error('dst', t("The path '@link_path' is either invalid or you do not have access to it.", array('@link_path' => $dst)));
+  }
+}
+
+/**
+ * Menu callback; confirms deleting a custom destination
+ */
+function customdestination_delete_confirm($form_state, $fid) {
+  $path = customdestination_load($fid);
+  if (user_access('access administration pages')) {
+    $form['fid'] = array('#type' => 'value', '#value' => $fid);
+    $output = confirm_form($form,
+      t('Are you sure you want to delete custom destination for %title?', array('%title' => $path['fid'])),
+      isset($_GET['destination']) ? $_GET['destination'] : 'admin/settings/customdestination');
+  }
+  return $output;
+}
+
+/**
+ * Execute URL alias deletion
+ */
+function customdestination_delete_confirm_submit($form, &$form_state) {
+  if ($form_state['values']['confirm']) {
+    customdestination_delete($form_state['values']['fid']);
+    $form_state['redirect'] = 'admin/settings/customdestination';
+    return;
+  }
+}
+
+/**
+ * Fetch a specific custom destination from the database.
+ */
+function customdestination_load($fid) {
+  return db_fetch_array(db_query("SELECT * FROM {customdestination} WHERE fid = '%s'", $fid));
+}
+
+/**
+ * Fetch a specific custom destination from the database.
+ */
+function customdestination_delete($fid) {
+  return db_query("DELETE FROM {customdestination} WHERE fid = '%s'", $fid);
+}
+
+/**
+ * Save a custom destination to the database.
+ */
+function customdestination_save($fid, $dst) {
+  $customdestination = customdestination_load($fid);
+  if (!empty($customdestination)) {
+    // There is already a custom destination defined for this fid
+    // Update the entry with new dst
+    db_query("UPDATE {customdestination} SET dst = '%s' WHERE fid = '%s'", $dst, $fid);
+  }
+  else {
+    // A new custom destination. Add it to the database.
+    db_query("INSERT INTO {customdestination} (fid, dst) VALUES ('%s', '%s')", $fid, $dst);
+  }
+}
+
+/**
+ * Return a listing of all defined URL aliases.
+ * When filter key passed, perform a standard search on the given key,
+ * and return the list of matching URL aliases.
+ */
+function customdestination_overview() {
+  $output = '';
+  $sql = 'SELECT * FROM {customdestination}';
+  $header = array(
+    array('data' => t('Form ID'), 'field' => 'fid', 'sort' => 'asc'),
+    array('data' => t('Destination'), 'field' => 'dst'),
+    array('data' => t('Operations'), 'colspan' => '2')
+  );
+
+  $sql .= tablesort_sql($header);
+  $result = pager_query($sql, 50, 0 , NULL);
+
+  $rows = array();
+  $destination = drupal_get_destination();
+  while ($data = db_fetch_object($result)) {
+    $row = array(check_plain($data->fid), check_plain($data->dst), l(t('edit'), "admin/settings/customdestination/edit/$data->fid", array('query' => $destination)), l(t('delete'), "admin/settings/customdestination/delete/$data->fid", array('query' => $destination)));
+    $rows[] = $row;
+  }
+
+  if (empty($rows)) {
+    $rows[] = array(array('data' => t('No custom destinations found.'), 'colspan' => 4));
+  }
+
+  $output .= theme('table', $header, $rows);
+  $output .= theme('pager', NULL, 50, 0);
+
+  return $output;
+}
+
+/**
+ * The core of the module, form_alter #redirect value with custom destination
+ */
+function customdestination_form_alter(&$form, $form_state, $form_id) {
+  $customdestination = customdestination_load($form_id);
+  if (!empty($customdestination)) {
+    $redirect = (strpos($customdestination['dst'], '?')) ? explode('?', $customdestination['dst']) : $customdestination['dst']; 
+    //var_dump($redirect);
+    $form['#redirect'] = $redirect;
+  }
+}
+
