@@ -41,5 +41,5 @@
  * signs to enable.
  */
 $sites = array(
-
+  'metropol.leela' => 'metropol-danmark.dk',
 );
