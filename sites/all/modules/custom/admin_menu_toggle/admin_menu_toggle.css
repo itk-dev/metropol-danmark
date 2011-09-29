@@ -1,9 +1,0 @@
-/* $Id$ */
-
-body.admin-menu-hidden {
-  margin-top:0px !important;
-}
-
-body.admin-menu-hidden #admin-menu {
-  display:none !important;
-}

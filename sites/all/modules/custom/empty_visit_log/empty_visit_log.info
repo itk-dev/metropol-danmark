@@ -1,6 +1,0 @@
-; $Id$
-name = Empty Visit Log
-description = Helper module for emptying visitor log for non admin users
-version = 6.x-1.0
-core = 6.x
-package = Other

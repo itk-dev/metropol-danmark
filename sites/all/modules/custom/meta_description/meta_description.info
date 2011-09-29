@@ -1,5 +1,0 @@
-; $Id:$
-name = Meta Description
-description = "Allows users to add meta descriptions to nodes."
-dependencies[] = token
-core = 6.x
