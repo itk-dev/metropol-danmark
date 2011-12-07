@@ -13,6 +13,7 @@ screenshot = images/screenshot.png
 stylesheets[all][]   = css/designit/designit.base.min.css
 stylesheets[all][]   = css/style.css
 stylesheets[all][]   = css/menu2.css
+stylesheets[all][]   = ../../libraries/flexslider/flexslider.css
 
 ; Print CSS
 stylesheets[print][] = css/metropol-danmark.print.css
@@ -26,6 +27,7 @@ conditional-stylesheets[if IE 5][all][] = css/IE_5_5.css
 scripts[]   = js/cufon-yui.js
 scripts[]   = js/Marconi_Com_Book_400-Marconi_Com_Book_italic_400.font.js
 scripts[]   = js/metropol-danmark.js
+scripts[]   = ../../libraries/flexslider/jquery.flexslider-min.js
 
 ; Regions
 regions[topmessage]     = topmessage

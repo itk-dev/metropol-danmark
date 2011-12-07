@@ -23,6 +23,9 @@ Drupal.metropol = function(context) {
 	user = Drupal.settings.isUser;
   function init() {
   // alert('');
+  
+  Drupal.metropol.flexslider();
+  
 	if($('body.section-presseklip'))
 	{
 		Drupal.metropol.videoLinks();
@@ -183,6 +186,11 @@ if($('#simplenews-block-form-3').length){
 };
 
 
+Drupal.metropol.flexslider = function() {
+  $('.flexslider').flexslider({
+    animation: "fade"
+  });
+}
 
 	
 /**
